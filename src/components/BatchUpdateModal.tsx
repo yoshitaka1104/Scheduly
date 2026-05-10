@@ -1,0 +1,137 @@
+import { useState } from 'react';
+import { useTimetableStore } from '../store/useTimetableStore';
+import { format } from 'date-fns';
+import { X, Edit3 } from 'lucide-react';
+import { Period } from '../types';
+
+interface Props {
+  isOpen: boolean;
+  onClose: () => void;
+}
+
+export function BatchUpdateModal({ isOpen, onClose }: Props) {
+  const { batchUpdatePeriod, currentDate, addLog, settings } = useTimetableStore();
+  const dateStr = format(currentDate, 'yyyy-MM-dd');
+  const availablePeriods = Array.from({ length: settings.periodsPerDay }, (_, i) => i + 1);
+  
+  const [startPeriod, setStartPeriod] = useState<Period>(1);
+  const [endPeriod, setEndPeriod] = useState<Period>(1);
+  const [updateText, setUpdateText] = useState('');
+  const [targetGrades, setTargetGrades] = useState<number[]>([1, 2, 3]);
+
+  if (!isOpen) return null;
+
+  const handleToggleGrade = (grade: number) => {
+    if (targetGrades.includes(grade)) {
+      if (targetGrades.length > 1) {
+        setTargetGrades(targetGrades.filter(g => g !== grade));
+      }
+    } else {
+      setTargetGrades([...targetGrades, grade].sort());
+    }
+  };
+
+  const handleBatchUpdate = () => {
+    if (!updateText.trim()) {
+      alert('変更後のテキストを入力してください。');
+      return;
+    }
+
+    const minP = Math.min(startPeriod, endPeriod);
+    const maxP = Math.max(startPeriod, endPeriod);
+    const rangeText = minP === maxP ? `${minP}限` : `${minP}限から${maxP}限まで`;
+    const gradesStr = targetGrades.join('年, ') + '年';
+    
+    batchUpdatePeriod(dateStr, startPeriod, endPeriod, updateText.trim(), targetGrades);
+    addLog({ targetDate: dateStr, action: 'bulk_update', details: `${rangeText}を${gradesStr}で「${updateText}」に一括変更しました` });
+    onClose();
+  };
+
+  return (
+    <div className="fixed inset-0 bg-slate-900/50 flex items-center justify-center z-50 p-4">
+      <div className="bg-white rounded-2xl shadow-xl w-full max-w-md overflow-hidden">
+        <div className="flex justify-between items-center p-4 border-b border-indigo-100 bg-indigo-50">
+          <h2 className="text-lg font-bold text-indigo-800 flex items-center gap-2">
+            <Edit3 className="h-5 w-5" />
+            一括変更
+          </h2>
+          <button onClick={onClose} className="text-indigo-400 hover:text-indigo-600 p-1 rounded-md hover:bg-indigo-100 transition-colors">
+            <X className="h-5 w-5" />
+          </button>
+        </div>
+        
+        <div className="p-6 space-y-6">
+          {/* 対象学年 */}
+          <div>
+            <h3 className="text-sm font-bold text-slate-700 mb-3">
+              対象の学年
+            </h3>
+            <div className="flex gap-3 mb-4">
+              {[1, 2, 3].map(grade => (
+                <label key={grade} className={`flex-1 flex items-center justify-center gap-2 border rounded-lg p-3 cursor-pointer transition-colors ${
+                  targetGrades.includes(grade) ? 'bg-indigo-50 border-indigo-200' : 'hover:bg-slate-50'
+                }`}>
+                  <input 
+                    type="checkbox" 
+                    checked={targetGrades.includes(grade)}
+                    onChange={() => handleToggleGrade(grade)}
+                    className="rounded text-indigo-600 focus:ring-indigo-500"
+                  />
+                  <span className="font-medium text-slate-700">{grade}年生</span>
+                </label>
+              ))}
+            </div>
+            <hr className="border-slate-100 my-6" />
+          </div>
+
+          <div>
+            <h3 className="text-sm font-bold text-slate-700 mb-3">
+              時限の一括変更
+            </h3>
+            <p className="text-xs text-slate-500 mb-4">
+              表示中の日付（{format(currentDate, 'M月d日')}）の選択した学年の指定した範囲の時限を、入力した内容に一括で変更します。
+            </p>
+            <div className="space-y-4">
+              <div className="flex items-center gap-3">
+                <select 
+                  value={startPeriod} 
+                  onChange={(e) => setStartPeriod(parseInt(e.target.value) as Period)}
+                  className="flex-1 rounded-lg border-slate-300 border p-2.5 focus:ring-2 focus:ring-indigo-500 outline-none font-medium text-slate-700"
+                >
+                  {availablePeriods.map(p => <option key={p} value={p}>{p}限</option>)}
+                </select>
+                <span className="text-slate-500 font-medium">〜</span>
+                <select 
+                  value={endPeriod} 
+                  onChange={(e) => setEndPeriod(parseInt(e.target.value) as Period)}
+                  className="flex-1 rounded-lg border-slate-300 border p-2.5 focus:ring-2 focus:ring-indigo-500 outline-none font-medium text-slate-700"
+                >
+                  {availablePeriods.map(p => <option key={p} value={p}>{p}限</option>)}
+                </select>
+              </div>
+              
+              <div>
+                <label className="block text-xs font-bold text-slate-400 mb-1.5">変更後の内容（科目名など）</label>
+                <input 
+                  type="text"
+                  value={updateText}
+                  onChange={(e) => setUpdateText(e.target.value)}
+                  placeholder="例：文化祭、体育祭、模試"
+                  className="w-full rounded-lg border-slate-300 border p-2.5 focus:ring-2 focus:ring-indigo-500 outline-none font-bold text-slate-800"
+                />
+              </div>
+            </div>
+
+            <button 
+              onClick={handleBatchUpdate}
+              className="mt-6 w-full bg-indigo-600 hover:bg-indigo-700 text-white py-2.5 rounded-lg font-medium transition-colors flex items-center justify-center gap-2 shadow-sm"
+            >
+              <Edit3 className="h-4 w-4" />
+              一括変更を実行
+            </button>
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+}
