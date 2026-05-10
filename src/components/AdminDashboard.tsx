@@ -6,7 +6,7 @@ import { ClassInfo, TimetableBlock, Period } from '../types';
 import { format, addDays } from 'date-fns';
 
 export function AdminDashboard() {
-  const { settings, setSettings, classes, setClasses, mergeBlocks, currentDate, addLog } = useTimetableStore();
+  const { settings, setSettings, classes, setClasses, mergeBlocks, currentDate } = useTimetableStore();
   
   const [periods, setPeriods] = useState(settings.periodsPerDay);
   const [namingRule, setNamingRule] = useState(settings.namingRule);

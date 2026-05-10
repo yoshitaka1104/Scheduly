@@ -363,8 +363,6 @@ export function TimetableBoard({ isExporting = false }: { isExporting?: boolean 
                           block={block} 
                           onClick={() => setActiveDetailsBlock({ block, mergedClassIds, mergedPeriods })}
                           duplicateTeachers={duplicateTeachers}
-                          span={w}
-                          rowSpan={h}
                           mergedClassIds={mergedClassIds}
                           mergedPeriods={mergedPeriods}
                           isChangeOnlyView={isChangeOnlyView}

@@ -7,14 +7,12 @@ interface Props {
   block: TimetableBlock;
   onClick: (e: React.MouseEvent) => void;
   duplicateTeachers?: string[];
-  span?: number;
-  rowSpan?: number;
   mergedClassIds?: string[];
   mergedPeriods?: number[];
   isChangeOnlyView?: boolean;
 }
 
-export function DraggableBlock({ block, onClick, duplicateTeachers = [], span = 1, rowSpan = 1, mergedClassIds = [], mergedPeriods = [], isChangeOnlyView = false }: Props) {
+export function DraggableBlock({ block, onClick, duplicateTeachers = [], mergedClassIds = [], mergedPeriods = [], isChangeOnlyView = false }: Props) {
   const { attributes, listeners, setNodeRef, transform, isDragging } = useDraggable({
     id: block.id,
     data: { block, mergedClassIds, mergedPeriods }
@@ -110,8 +108,6 @@ export function DraggableBlock({ block, onClick, duplicateTeachers = [], span = 
             acc[sub.subject].push(sub);
             return acc;
           }, {} as Record<string, typeof block.subClasses>);
-
-          const subjectCount = Object.keys(grouped).length;
 
           return Object.entries(grouped).map(([subject, subs]) => {
             const hasTask = subs.some(s => s.hasTask);
