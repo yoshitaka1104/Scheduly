@@ -67,7 +67,7 @@ export function AdminDashboard() {
           d = addDays(d, 1);
         }
 
-        const groupedRows = new Map<string, Array<{ subject: string, teacher: string }>>();
+        const groupedRows = new Map<string, Array<{ subject: string, teacher: string, isElective: boolean }>>();
 
         data.forEach((row: any) => {
           const className = row['クラス']?.toString();
