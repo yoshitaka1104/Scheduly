@@ -10,6 +10,9 @@ import {
   useSensors,
   Modifier
 } from '@dnd-kit/core';
+import { DraggableBlock } from './DraggableBlock';
+import { DroppableCell } from './DroppableCell';
+import { BlockDetailsModal } from './BlockDetailsModal';
 
 const restrictToVerticalAxis: Modifier = ({ transform }) => {
   return {
@@ -17,9 +20,6 @@ const restrictToVerticalAxis: Modifier = ({ transform }) => {
     x: 0,
   };
 };
-import { DraggableBlock } from './DraggableBlock';
-import { DroppableCell } from './DroppableCell';
-import { BlockDetailsModal } from './BlockDetailsModal';
 
 const formatClassName = (grade: number, name: string) => {
   const label = name.replace('組', '');
