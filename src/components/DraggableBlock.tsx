@@ -117,10 +117,6 @@ export function DraggableBlock({ block, onClick, duplicateTeachers = [], mergedC
             let verticalFontSize = 'clamp(14px, 21cqh, 20px)';
             if (subject.length >= 4) {
               verticalFontSize = (hasTask || locations.length > 0) ? 'clamp(11px, 15cqh, 14px)' : 'clamp(12px, 17cqh, 16px)';
-            } else if (subject.length === 3) {
-              verticalFontSize = (hasTask || locations.length > 0) ? 'clamp(12px, 17cqh, 16px)' : 'clamp(14px, 20cqh, 19px)';
-            } else if (hasTask && locations.length > 0) {
-              verticalFontSize = 'clamp(12px, 17cqh, 16px)';
             }
 
             return (
