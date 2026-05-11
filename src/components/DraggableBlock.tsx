@@ -113,6 +113,16 @@ export function DraggableBlock({ block, onClick, duplicateTeachers = [], mergedC
             const hasTask = subs.some(s => s.hasTask);
             const locations = Array.from(new Set(subs.map(s => s.location).filter(Boolean)));
 
+            // 文字数とバッジの有無に応じてフォントサイズを動的に計算
+            let verticalFontSize = 'clamp(14px, 21cqh, 20px)';
+            if (subject.length >= 4) {
+              verticalFontSize = (hasTask || locations.length > 0) ? 'clamp(11px, 15cqh, 14px)' : 'clamp(12px, 17cqh, 16px)';
+            } else if (subject.length === 3) {
+              verticalFontSize = (hasTask || locations.length > 0) ? 'clamp(12px, 17cqh, 16px)' : 'clamp(14px, 20cqh, 19px)';
+            } else if (hasTask && locations.length > 0) {
+              verticalFontSize = 'clamp(12px, 17cqh, 16px)';
+            }
+
             return (
               <div key={subject} className={`flex flex-col items-center justify-center h-full shrink-0 ${block.isBatch ? 'text-center w-full' : ''}`}>
                 <div className={`flex ${block.isBatch ? 'items-center justify-center w-full' : 'flex-col items-center justify-center gap-0.5 h-full'}`}>
@@ -125,7 +135,7 @@ export function DraggableBlock({ block, onClick, duplicateTeachers = [], mergedC
                           textOrientation: 'upright', 
                           textAlign: 'center',
                           maxHeight: '100%',
-                          fontSize: 'clamp(14px, 21cqh, 20px)'
+                          fontSize: verticalFontSize
                         }
                     }
                   >
