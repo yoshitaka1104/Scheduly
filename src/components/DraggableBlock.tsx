@@ -101,63 +101,74 @@ export function DraggableBlock({ block, onClick, duplicateTeachers = [], mergedC
       {/* 多色対応の左側ライン */}
       <div className={`absolute left-0 top-0 bottom-0 w-[3px] md:w-[4px] ${leftLine}`} />
 
-      <div className={`flex ${block.isBatch ? 'flex-col justify-center' : 'flex-row justify-center items-center'} gap-px md:gap-0.5 w-full h-full pointer-events-none relative z-10 overflow-hidden`}>
-        {(() => {
-          const grouped = displaySubClasses.reduce((acc, sub) => {
-            if (!acc[sub.subject]) acc[sub.subject] = [];
-            acc[sub.subject].push(sub);
-            return acc;
-          }, {} as Record<string, typeof block.subClasses>);
+      <div className={`flex flex-col w-full h-full pointer-events-none relative z-10 overflow-hidden`}>
+        <div className={`flex ${block.isBatch ? 'flex-col justify-center' : 'flex-row justify-center items-center'} gap-px md:gap-0.5 w-full flex-1 overflow-hidden`}>
+          {(() => {
+            const grouped = displaySubClasses.reduce((acc, sub) => {
+              if (!acc[sub.subject]) acc[sub.subject] = [];
+              acc[sub.subject].push(sub);
+              return acc;
+            }, {} as Record<string, typeof block.subClasses>);
 
-          return Object.entries(grouped).map(([subject, subs]) => {
-            const hasTask = subs.some(s => s.hasTask);
-            const locations = Array.from(new Set(subs.map(s => s.location).filter(Boolean)));
+            const totalTasks = displaySubClasses.filter(s => s.hasTask).length;
 
-            // 文字数とバッジの有無に応じてフォントサイズを動的に計算
-            let verticalFontSize = 'clamp(14px, 21cqh, 20px)';
-            if (subject.length >= 4) {
-              verticalFontSize = (hasTask || locations.length > 0) ? 'clamp(11px, 15cqh, 14px)' : 'clamp(12px, 17cqh, 16px)';
-            }
+            return Object.entries(grouped).map(([subject, subs]) => {
+              const hasTask = subs.some(s => s.hasTask);
+              const locations = Array.from(new Set(subs.map(s => s.location).filter(Boolean)));
 
-            return (
-              <div key={subject} className={`flex flex-col items-center justify-center h-full shrink-0 ${block.isBatch ? 'text-center w-full' : ''}`}>
-                <div className={`flex ${block.isBatch ? 'items-center justify-center w-full' : 'flex-col items-center justify-center gap-0.5 h-full'}`}>
-                  <span 
-                    className={`font-black text-slate-800 tracking-tight shrink-0 ${block.isBatch ? 'leading-none truncate break-words' : 'leading-none text-center'}`}
-                    style={block.isBatch 
-                      ? { fontSize: 'min(45cqmin, 80px)', maxWidth: '95%' } 
-                      : { 
-                          writingMode: 'vertical-rl', 
-                          textOrientation: 'upright', 
-                          textAlign: 'center',
-                          maxHeight: '100%',
-                          fontSize: verticalFontSize
-                        }
-                    }
-                  >
-                    {subject}
-                  </span>
-                  {hasTask && (
-                    <div className="flex gap-0.5 items-center flex-shrink-0 mt-1">
-                      <span className="px-2 py-0.5 rounded-sm text-[11px] md:text-[12px] font-black bg-amber-500 text-white shadow-sm tracking-wider">
-                        課題
-                      </span>
+              // 文字数とバッジの有無に応じてフォントサイズを動的に計算
+              let verticalFontSize = 'clamp(14px, 21cqh, 20px)';
+              if (subject.length >= 4) {
+                verticalFontSize = (hasTask || locations.length > 0) ? 'clamp(11px, 15cqh, 14px)' : 'clamp(12px, 17cqh, 16px)';
+              }
+
+              return (
+                <div key={subject} className={`flex flex-col items-center justify-center h-full shrink-0 ${block.isBatch ? 'text-center w-full' : ''}`}>
+                  <div className={`flex ${block.isBatch ? 'items-center justify-center w-full' : 'flex-col items-center justify-center gap-0.5 h-full'}`}>
+                    <span 
+                      className={`font-black text-slate-800 tracking-tight shrink-0 ${block.isBatch ? 'leading-none truncate break-words' : 'leading-none text-center'}`}
+                      style={block.isBatch 
+                        ? { fontSize: 'min(45cqmin, 80px)', maxWidth: '95%' } 
+                        : { 
+                            writingMode: 'vertical-rl', 
+                            textOrientation: 'upright', 
+                            textAlign: 'center',
+                            maxHeight: '100%',
+                            fontSize: verticalFontSize
+                          }
+                      }
+                    >
+                      {subject}
+                    </span>
+                    {(hasTask && totalTasks < 2) && (
+                      <div className="flex gap-0.5 items-center flex-shrink-0 mt-1">
+                        <span className="px-2 py-0.5 rounded-sm text-[11px] md:text-[12px] font-black bg-amber-500 text-white shadow-sm tracking-wider">
+                          課題
+                        </span>
+                      </div>
+                    )}
+                  </div>
+                  {locations.length > 0 && (
+                    <div className={`flex flex-wrap gap-1 mt-1.5 justify-center ${block.isBatch ? 'w-full' : ''}`}>
+                      {locations.map((loc, idx) => (
+                        <span key={idx} className="text-[11px] md:text-[12px] font-black text-sky-800 bg-sky-100 border border-sky-300 px-2 py-0.5 rounded-sm shadow-sm truncate max-w-full tracking-wide">
+                          {loc}
+                        </span>
+                      ))}
                     </div>
                   )}
                 </div>
-                {locations.length > 0 && (
-                  <div className={`flex flex-wrap gap-1 mt-1.5 justify-center ${block.isBatch ? 'w-full' : ''}`}>
-                    {locations.map((loc, idx) => (
-                      <span key={idx} className="text-[11px] md:text-[12px] font-black text-sky-800 bg-sky-100 border border-sky-300 px-2 py-0.5 rounded-sm shadow-sm truncate max-w-full tracking-wide">
-                        {loc}
-                      </span>
-                    ))}
-                  </div>
-                )}
-              </div>
-            );
-          });
-        })()}
+              );
+            });
+          })()}
+        </div>
+        {displaySubClasses.filter(s => s.hasTask).length >= 2 && (
+          <div className="flex justify-center pb-0.5 shrink-0">
+            <span className="px-2 py-0.5 rounded-sm text-[11px] md:text-[12px] font-black bg-amber-500 text-white shadow-sm tracking-wider">
+              課題
+            </span>
+          </div>
+        )}
       </div>
     </div>
   );
