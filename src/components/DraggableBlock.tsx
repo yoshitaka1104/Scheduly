@@ -147,6 +147,11 @@ export function DraggableBlock({ block, onClick, duplicateTeachers = [], mergedC
                         </span>
                       </div>
                     )}
+                    {(hasTask && totalTasks >= 2) && (
+                      <div className="flex gap-0.5 items-center flex-shrink-0 mt-1">
+                        <div className="w-2.5 h-2.5 bg-amber-500 rounded-full border border-white shadow-sm"></div>
+                      </div>
+                    )}
                   </div>
                   {locations.length > 0 && (
                     <div className={`flex flex-wrap gap-1 mt-1.5 justify-center ${block.isBatch ? 'w-full' : ''}`}>
