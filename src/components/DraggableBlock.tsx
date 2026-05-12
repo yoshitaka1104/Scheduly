@@ -156,7 +156,7 @@ export function DraggableBlock({ block, onClick, duplicateTeachers = [], mergedC
                 </div>
                 {hasAnyTask && (
                   <div className="flex justify-center pb-0.5 shrink-0">
-                    <span className="px-2 py-0.5 rounded-sm text-[11px] md:text-[12px] font-black bg-amber-500 text-white shadow-sm tracking-wider">
+                    <span className="px-2 py-0.5 rounded-sm text-[11px] md:text-[12px] font-black bg-amber-500 text-white shadow-sm tracking-wider whitespace-nowrap">
                       課題
                     </span>
                   </div>
@@ -195,7 +195,7 @@ export function DraggableBlock({ block, onClick, duplicateTeachers = [], mergedC
                       </span>
                       {hasTask && (
                         <div className="flex gap-0.5 items-center flex-shrink-0 mt-1">
-                          <span className="px-2 py-0.5 rounded-sm text-[11px] md:text-[12px] font-black bg-amber-500 text-white shadow-sm tracking-wider">
+                          <span className="px-2 py-0.5 rounded-sm text-[11px] md:text-[12px] font-black bg-amber-500 text-white shadow-sm tracking-wider whitespace-nowrap">
                             課題
                           </span>
                         </div>
