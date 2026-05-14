@@ -172,11 +172,48 @@ export function TimetableBoard({ isExporting = false }: { isExporting?: boolean 
             className="grid gap-[2px] md:gap-[4px] relative pb-2" 
             style={{ 
               gridTemplateColumns: `40px repeat(${filteredClasses.length}, minmax(0, 1fr))`,
-              gridTemplateRows: `auto repeat(${activePeriods.length}, minmax(100px, 1fr))`
-            }}
+              gridTemplateRows: `auto repeat(${activePeriods.length}, minmax(100px, 1fr))`,
+              '--gap-x': 'max(2px, 4px)', // Transform用の変数を定義
+              '--gap-y': 'max(2px, 4px)'
+            } as React.CSSProperties}
           >
             {/* Top-left empty cell */}
             <div className="sticky top-0 bg-white z-30 pb-2 col-start-1 row-start-1"></div>
+
+            {/* 学年の境界線（縦線） */}
+            {filteredClasses.map((cls, i) => {
+              const nextCls = filteredClasses[i + 1];
+              if (nextCls && cls.grade !== nextCls.grade) {
+                return (
+                  <div 
+                    key={`v-line-${cls.id}`}
+                    className="pointer-events-none z-20 border-r-[2px] border-slate-600"
+                    style={{
+                      gridColumn: i + 2,
+                      gridRow: '1 / -1',
+                      width: '100%',
+                      height: '100%',
+                      transform: 'translateX(calc(var(--gap-x) / 2))' // gapの中央に配置するための調整
+                    }}
+                  />
+                );
+              }
+              return null;
+            })}
+
+            {/* 4限目と5限目の境界線（横二重線） */}
+            {activePeriods.includes(4) && activePeriods.includes(5) && (
+              <div 
+                className="pointer-events-none z-20 border-b-[4px] border-double border-slate-600"
+                style={{
+                  gridColumn: '1 / -1',
+                  gridRow: activePeriods.indexOf(4) + 2,
+                  width: '100%',
+                  height: '100%',
+                  transform: 'translateY(calc(var(--gap-y) / 2))' // gapの中央に配置するための調整
+                }}
+              />
+            )}
             
             {/* Class Headers */}
             {filteredClasses.map((cls, i) => (
