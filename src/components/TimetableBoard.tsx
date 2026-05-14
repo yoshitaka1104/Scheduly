@@ -213,22 +213,26 @@ export function TimetableBoard({ isExporting = false }: { isExporting?: boolean 
               const duplicateTeachersByPeriod = new Map<number, string[]>();
               activePeriods.forEach(p => {
                 const blocksInPeriod = blocksForToday.filter(b => b.period === p);
-                const teacherSubClasses = new Map<string, any[]>();
+                const teacherSubClasses = new Map<string, Array<{sub: any, block: TimetableBlock}>>();
                 blocksInPeriod.forEach(b => {
                   b.subClasses?.forEach(sub => {
                     const teachers = parseTeachers(sub.teacher);
                     teachers.forEach(t => {
                       if (t) {
                         if (!teacherSubClasses.has(t)) teacherSubClasses.set(t, []);
-                        teacherSubClasses.get(t)!.push(sub);
+                        teacherSubClasses.get(t)!.push({sub, block: b});
                       }
                     });
                   });
                 });
                 const duplicates = Array.from(teacherSubClasses.entries())
-                  .filter(([_, subs]) => {
-                    if (subs.length <= 1) return false;
-                    const hasNonElective = subs.some(s => !s.isElective);
+                  .filter(([_, items]) => {
+                    if (items.length <= 1) return false;
+                    const hasNonElective = items.some(item => {
+                      const isExplicitlyElective = item.sub.isElective;
+                      const isImplicitlyElective = item.block.subClasses && item.block.subClasses.length > 1;
+                      return !isExplicitlyElective && !isImplicitlyElective;
+                    });
                     if (hasNonElective) return true;
                     return false;
                   })
