@@ -172,10 +172,8 @@ export function TimetableBoard({ isExporting = false }: { isExporting?: boolean 
             className="grid gap-[2px] md:gap-[4px] relative pb-2" 
             style={{ 
               gridTemplateColumns: `40px repeat(${filteredClasses.length}, minmax(0, 1fr))`,
-              gridTemplateRows: `auto repeat(${activePeriods.length}, minmax(100px, 1fr))`,
-              '--gap-x': 'max(2px, 4px)', // Transform用の変数を定義
-              '--gap-y': 'max(2px, 4px)'
-            } as React.CSSProperties}
+              gridTemplateRows: `auto repeat(${activePeriods.length}, minmax(100px, 1fr))`
+            }}
           >
             {/* Top-left empty cell */}
             <div className="sticky top-0 bg-white z-30 pb-2 col-start-1 row-start-1"></div>
@@ -187,13 +185,16 @@ export function TimetableBoard({ isExporting = false }: { isExporting?: boolean 
                 return (
                   <div 
                     key={`v-line-${cls.id}`}
-                    className="pointer-events-none z-20 border-r-[2px] border-slate-600"
+                    className="pointer-events-none z-20 bg-slate-300"
                     style={{
                       gridColumn: i + 2,
                       gridRow: '1 / -1',
-                      width: '100%',
-                      height: '100%',
-                      transform: 'translateX(calc(var(--gap-x) / 2))' // gapの中央に配置するための調整
+                      position: 'absolute',
+                      right: 0,
+                      top: 0,
+                      bottom: 0,
+                      width: '1px',
+                      transform: 'translateX(100%)' // セルの外（右側の隙間）に完全に押し出す
                     }}
                   />
                 );
@@ -204,13 +205,18 @@ export function TimetableBoard({ isExporting = false }: { isExporting?: boolean 
             {/* 4限目と5限目の境界線（横二重線） */}
             {activePeriods.includes(4) && activePeriods.includes(5) && (
               <div 
-                className="pointer-events-none z-20 border-b-[4px] border-double border-slate-600"
+                className="pointer-events-none z-20 border-slate-300"
                 style={{
                   gridColumn: '1 / -1',
                   gridRow: activePeriods.indexOf(4) + 2,
-                  width: '100%',
-                  height: '100%',
-                  transform: 'translateY(calc(var(--gap-y) / 2))' // gapの中央に配置するための調整
+                  position: 'absolute',
+                  bottom: 0,
+                  left: 0,
+                  right: 0,
+                  height: '3px',
+                  borderTop: '1px solid',
+                  borderBottom: '1px solid',
+                  transform: 'translateY(100%)' // セルの外（下側の隙間）に完全に押し出す
                 }}
               />
             )}
