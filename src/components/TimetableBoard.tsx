@@ -165,16 +165,27 @@ export function TimetableBoard({ isExporting = false }: { isExporting?: boolean 
 
   return (
     <DndContext sensors={sensors} onDragEnd={handleDragEnd} modifiers={[restrictToVerticalAxis]}>
+      <style>{`
+        .timetable-grid {
+          gap: 2px;
+          --gap-size: 2px;
+        }
+        @media (min-width: 768px) {
+          .timetable-grid {
+            gap: 4px;
+            --gap-size: 4px;
+          }
+        }
+      `}</style>
       <div className={`w-full ${isExporting ? 'h-auto overflow-visible' : 'h-full overflow-auto'} p-2`}>
         <div className="w-full min-w-0" onClick={e => e.stopPropagation()}>
           {/* 2D Grid Layout */}
           <div 
-            className="grid gap-[2px] md:gap-[4px] relative pb-2" 
+            className="grid timetable-grid relative pb-2" 
             style={{ 
               gridTemplateColumns: `40px repeat(${filteredClasses.length}, minmax(0, 1fr))`,
               gridTemplateRows: `auto repeat(${activePeriods.length}, minmax(100px, 1fr))`,
-              '--gap-x': 'max(2px, 4px)', // Transform用の変数を定義
-              '--gap-y': 'max(2px, 4px)'
+              '--gap-size': '2px'
             } as React.CSSProperties}
           >
             {/* Top-left empty cell */}
@@ -187,13 +198,13 @@ export function TimetableBoard({ isExporting = false }: { isExporting?: boolean 
                 return (
                   <div 
                     key={`v-line-${cls.id}`}
-                    className="pointer-events-none z-0 border-r-[2px] border-slate-300"
+                    className="pointer-events-none z-0 border-r-[2px] border-slate-400"
                     style={{
                       gridColumn: i + 2,
                       gridRow: '1 / -1',
                       width: '100%',
                       height: '100%',
-                      transform: 'translateX(calc(var(--gap-x) / 2))' // gapの中央に配置するための調整
+                      transform: 'translateX(calc(var(--gap-size) / 2 + 1px))'
                     }}
                   />
                 );
@@ -204,13 +215,13 @@ export function TimetableBoard({ isExporting = false }: { isExporting?: boolean 
             {/* 4限目と5限目の境界線（横二重線） */}
             {activePeriods.includes(4) && activePeriods.includes(5) && (
               <div 
-                className="pointer-events-none z-0 border-b-[4px] border-double border-slate-300"
+                className="pointer-events-none z-0 border-b-[4px] border-double border-slate-400"
                 style={{
                   gridColumn: '1 / -1',
                   gridRow: activePeriods.indexOf(4) + 2,
                   width: '100%',
                   height: '100%',
-                  transform: 'translateY(calc(var(--gap-y) / 2))' // gapの中央に配置するための調整
+                  transform: 'translateY(calc(var(--gap-size) / 2 + 2px))'
                 }}
               />
             )}
