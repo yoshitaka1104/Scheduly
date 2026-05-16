@@ -91,6 +91,39 @@ export function TimetableBoard({ isExporting = false }: { isExporting?: boolean 
     }
   });
 
+  const colTemplates = ['40px'];
+  filteredClasses.forEach((cls, i) => {
+    colTemplates.push('minmax(0, 1fr)');
+    const nextCls = filteredClasses[i + 1];
+    if (nextCls && cls.grade !== nextCls.grade) {
+      colTemplates.push('5px'); // 学年境界のスペーサー行
+    }
+  });
+
+  const getGridColumn = (cIdx: number) => {
+    let col = 2 + cIdx;
+    for (let i = 0; i < cIdx; i++) {
+      const cls = filteredClasses[i];
+      const nextCls = filteredClasses[i + 1];
+      if (nextCls && cls.grade !== nextCls.grade) {
+        col += 1;
+      }
+    }
+    return col;
+  };
+
+  const getColSpan = (startIdx: number, width: number) => {
+    let span = width;
+    for (let i = startIdx; i < startIdx + width - 1; i++) {
+      const cls = filteredClasses[i];
+      const nextCls = filteredClasses[i + 1];
+      if (nextCls && cls.grade !== nextCls.grade) {
+        span += 1;
+      }
+    }
+    return span;
+  };
+
   const [activeDetailsBlock, setActiveDetailsBlock] = useState<{ block: TimetableBlock, mergedClassIds: string[], mergedPeriods: number[] } | null>(null);
 
   const sensors = useSensors(
@@ -206,7 +239,7 @@ export function TimetableBoard({ isExporting = false }: { isExporting?: boolean 
           <div 
             className="grid timetable-grid relative pb-2" 
             style={{ 
-              gridTemplateColumns: `40px repeat(${filteredClasses.length}, minmax(0, 1fr))`,
+              gridTemplateColumns: colTemplates.join(' '),
               gridTemplateRows: rowTemplates.join(' '),
               '--gap-size': '2px'
             } as React.CSSProperties}
@@ -221,15 +254,16 @@ export function TimetableBoard({ isExporting = false }: { isExporting?: boolean 
                 return (
                   <div 
                     key={`v-line-${cls.id}`}
-                    className="pointer-events-none z-0 border-r-[2px] border-slate-400"
+                    className="pointer-events-none z-0 flex justify-center items-center"
                     style={{
-                      gridColumn: i + 2,
+                      gridColumn: getGridColumn(i) + 1,
                       gridRow: '1 / -1',
                       width: '100%',
-                      height: '100%',
-                      transform: 'translateX(calc(var(--gap-size) / 2 + 1px))'
+                      height: '100%'
                     }}
-                  />
+                  >
+                    <div className="h-full border-l-[2px] border-slate-400 opacity-60" />
+                  </div>
                 );
               }
               return null;
@@ -256,7 +290,7 @@ export function TimetableBoard({ isExporting = false }: { isExporting?: boolean 
               <div 
                 key={`header-${cls.id}`} 
                 className="sticky top-0 bg-white z-20 pb-2 flex"
-                style={{ gridColumnStart: i + 2, gridRowStart: 1 }}
+                style={{ gridColumnStart: getGridColumn(i), gridRowStart: 1 }}
               >
                 <div className="w-full text-center font-bold text-indigo-900 bg-indigo-100 rounded-xl py-2 shadow-sm border border-indigo-200 text-sm truncate px-1 self-end">
                   {formatClassName(cls.grade, cls.name)}
@@ -431,7 +465,7 @@ export function TimetableBoard({ isExporting = false }: { isExporting?: boolean 
                   <div 
                     key={cellId} 
                     style={{ 
-                      gridColumn: `${cIdx + 2} / span ${w}`, 
+                      gridColumn: `${getGridColumn(cIdx)} / span ${getColSpan(cIdx, w)}`, 
                       gridRow: `${getGridRow(period)} / span ${getRowSpan(period, h)}`,
                       minWidth: 0,
                       minHeight: 0
