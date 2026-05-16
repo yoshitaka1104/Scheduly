@@ -116,8 +116,12 @@ export function DraggableBlock({ block, onClick, duplicateTeachers = [], mergedC
                   const tasks = subs.filter(s => s.hasTask);
                   const locations = Array.from(new Set(subs.map(s => s.location).filter(Boolean)));
                   
+                  // 元のデータ（block.subClasses）全体を見て、この科目に複数の教員（エントリ）があるか判定する
+                  const originalSubsForSubject = block.subClasses?.filter(s => s.subject === subject) || [];
+                  const isDuplicatedSubject = originalSubsForSubject.length > 1;
+
                   // 同じ科目で複数の教員がいる場合のみバッジを表示する
-                  const taskBadges = tasks.filter(taskSub => subs.length > 1 && taskSub.teacher).map(taskSub => {
+                  const taskBadges = tasks.filter(taskSub => isDuplicatedSubject && taskSub.teacher).map(taskSub => {
                     return taskSub.teacher ? taskSub.teacher.split(/[,\s・、\n]/)[0] : '';
                   }).filter(Boolean);
 
@@ -174,8 +178,12 @@ export function DraggableBlock({ block, onClick, duplicateTeachers = [], mergedC
                 const tasks = subs.filter(s => s.hasTask);
                 const locations = Array.from(new Set(subs.map(s => s.location).filter(Boolean)));
                 
+                // 元のデータ（block.subClasses）全体を見て、この科目に複数の教員（エントリ）があるか判定する
+                const originalSubsForSubject = block.subClasses?.filter(s => s.subject === subject) || [];
+                const isDuplicatedSubject = originalSubsForSubject.length > 1;
+
                 // 同じ科目で複数の教員がいる場合のみバッジを表示する
-                const taskBadges = tasks.filter(taskSub => subs.length > 1 && taskSub.teacher).map(taskSub => {
+                const taskBadges = tasks.filter(taskSub => isDuplicatedSubject && taskSub.teacher).map(taskSub => {
                   return taskSub.teacher ? taskSub.teacher.split(/[,\s・、\n]/)[0] : '';
                 }).filter(Boolean);
 
