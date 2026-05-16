@@ -129,13 +129,29 @@ export function DraggableBlock({ block, onClick, duplicateTeachers = [], mergedC
                   if (subject.length >= 4) {
                     verticalFontSize = (taskBadges.length > 0 || locations.length > 0) ? 'clamp(11px, 15cqh, 14px)' : 'clamp(12px, 17cqh, 16px)';
                   }
+
+                  let batchFontSize = 'min(45cqmin, 80px)';
+                  if (block.isBatch) {
+                    if (subject.length >= 25) batchFontSize = 'clamp(10px, 15cqmin, 24px)';
+                    else if (subject.length >= 15) batchFontSize = 'clamp(12px, 20cqmin, 32px)';
+                    else if (subject.length >= 8) batchFontSize = 'clamp(14px, 28cqmin, 45px)';
+                    else if (subject.length >= 4) batchFontSize = 'clamp(16px, 35cqmin, 60px)';
+                    else batchFontSize = 'min(45cqmin, 80px)';
+                  }
+
                   return (
-                    <div key={subject} className={`flex flex-col items-center justify-center h-full shrink-0 ${block.isBatch ? 'text-center w-full' : ''}`}>
-                      <div className={`flex ${block.isBatch ? 'items-center justify-center w-full' : 'flex-col items-center justify-center gap-0.5 h-full'}`}>
+                    <div key={subject} className={`flex flex-col items-center justify-center h-full shrink-0 ${block.isBatch ? 'text-center w-full px-1' : ''}`}>
+                      <div className={`flex ${block.isBatch ? 'flex-col items-center justify-center w-full h-full' : 'flex-col items-center justify-center gap-0.5 h-full'}`}>
                         <span 
-                          className={`font-black text-slate-800 tracking-tight shrink-0 ${block.isBatch ? 'leading-none truncate break-words' : 'leading-none text-center'}`}
+                          className={`font-black text-slate-800 tracking-tight shrink-0 ${block.isBatch ? 'leading-tight text-center break-words overflow-hidden' : 'leading-none text-center'}`}
                           style={block.isBatch 
-                            ? { fontSize: 'min(45cqmin, 80px)', maxWidth: '95%' } 
+                            ? { 
+                                fontSize: batchFontSize, 
+                                maxWidth: '100%',
+                                display: '-webkit-box',
+                                WebkitLineClamp: 3,
+                                WebkitBoxOrient: 'vertical'
+                              } 
                             : { 
                                 writingMode: 'vertical-rl', 
                                 textOrientation: 'upright', 
@@ -191,13 +207,29 @@ export function DraggableBlock({ block, onClick, duplicateTeachers = [], mergedC
                 if (subject.length >= 4) {
                   verticalFontSize = (taskBadges.length > 0 || locations.length > 0) ? 'clamp(11px, 15cqh, 14px)' : 'clamp(12px, 17cqh, 16px)';
                 }
+
+                let batchFontSize = 'min(45cqmin, 80px)';
+                if (block.isBatch) {
+                  if (subject.length >= 25) batchFontSize = 'clamp(10px, 15cqmin, 24px)';
+                  else if (subject.length >= 15) batchFontSize = 'clamp(12px, 20cqmin, 32px)';
+                  else if (subject.length >= 8) batchFontSize = 'clamp(14px, 28cqmin, 45px)';
+                  else if (subject.length >= 4) batchFontSize = 'clamp(16px, 35cqmin, 60px)';
+                  else batchFontSize = 'min(45cqmin, 80px)';
+                }
+
                 return (
-                  <div key={subject} className={`flex flex-col items-center justify-center h-full shrink-0 ${block.isBatch ? 'text-center w-full' : ''}`}>
-                    <div className={`flex ${block.isBatch ? 'items-center justify-center w-full' : 'flex-col items-center justify-center gap-0.5 h-full'}`}>
+                  <div key={subject} className={`flex flex-col items-center justify-center h-full shrink-0 ${block.isBatch ? 'text-center w-full px-1' : ''}`}>
+                    <div className={`flex ${block.isBatch ? 'flex-col items-center justify-center w-full h-full' : 'flex-col items-center justify-center gap-0.5 h-full'}`}>
                       <span 
-                        className={`font-black text-slate-800 tracking-tight shrink-0 ${block.isBatch ? 'leading-none truncate break-words' : 'leading-none text-center'}`}
+                        className={`font-black text-slate-800 tracking-tight shrink-0 ${block.isBatch ? 'leading-tight text-center break-words overflow-hidden' : 'leading-none text-center'}`}
                         style={block.isBatch 
-                          ? { fontSize: 'min(45cqmin, 80px)', maxWidth: '95%' } 
+                          ? { 
+                              fontSize: batchFontSize, 
+                              maxWidth: '100%',
+                              display: '-webkit-box',
+                              WebkitLineClamp: 3,
+                              WebkitBoxOrient: 'vertical'
+                            } 
                           : { 
                               writingMode: 'vertical-rl', 
                               textOrientation: 'upright', 
