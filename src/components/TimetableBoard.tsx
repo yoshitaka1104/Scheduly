@@ -279,7 +279,7 @@ export function TimetableBoard({ isExporting = false }: { isExporting?: boolean 
 
             {/* Timetable Cells with 2D Merging */}
             {(() => {
-              const cells = [];
+              const cells: { cls: any, period: Period, w: number, h: number, block?: TimetableBlock, cIdx: number, pIdx: number, mergedClassIds?: string[], mergedPeriods?: number[] }[] = [];
               const visited = new Set<string>();
 
               // Precalculate duplicate teachers for each period
