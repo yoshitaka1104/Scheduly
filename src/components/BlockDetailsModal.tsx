@@ -12,12 +12,14 @@ export function BlockDetailsModal({ activeItem, onClose }: Props) {
   const { updateBlocks, classes, addLog, blocks } = useTimetableStore();
   const block = activeItem?.block || null;
   const [editedSubClasses, setEditedSubClasses] = useState<TimetableBlock['subClasses']>([]);
+  const [selectedClassIds, setSelectedClassIds] = useState<string[]>([]);
 
   useEffect(() => {
-    if (block) {
-      setEditedSubClasses(JSON.parse(JSON.stringify(block.subClasses || [])));
+    if (activeItem) {
+      setEditedSubClasses(JSON.parse(JSON.stringify(activeItem.block.subClasses || [])));
+      setSelectedClassIds(activeItem.mergedClassIds);
     }
-  }, [block]);
+  }, [activeItem]);
 
   const { classTeachers, otherTeachers, teacherToSubjectsMap } = React.useMemo(() => {
     const allT = new Set<string>();
@@ -86,11 +88,11 @@ export function BlockDetailsModal({ activeItem, onClose }: Props) {
       
       if (!block || !activeItem) return;
 
-      // 対象となる全ての結合ブロックのIDを収集
+      // 対象となる全ての選択済みクラスのブロックIDを収集
       const targetIds = blocks
         .filter(b => 
           b.date === block.date && 
-          activeItem.mergedClassIds.includes(b.classId) && 
+          selectedClassIds.includes(b.classId) && 
           activeItem.mergedPeriods.includes(b.period)
         )
         .map(b => b.id);
@@ -120,6 +122,31 @@ export function BlockDetailsModal({ activeItem, onClose }: Props) {
           <button onClick={onClose} className="text-slate-400 hover:text-slate-600 p-1 rounded-md hover:bg-slate-200 transition-colors">
             <X className="h-5 w-5" />
           </button>
+        </div>
+        
+        <div className="p-4 border-b border-slate-100 bg-white">
+          <p className="text-xs font-bold text-slate-500 mb-2">対象クラス（合同授業にする場合は複数チェック）</p>
+          <div className="flex flex-wrap gap-2">
+            {classes.filter(c => c.grade === targetClass?.grade).map(c => (
+              <label key={c.id} className={`flex items-center gap-1.5 px-3 py-1.5 rounded-md border text-sm font-bold cursor-pointer transition-colors ${selectedClassIds.includes(c.id) ? 'bg-indigo-50 border-indigo-200 text-indigo-700' : 'bg-slate-50 border-slate-200 text-slate-600 hover:bg-slate-100'}`}>
+                <input 
+                  type="checkbox" 
+                  className="hidden"
+                  checked={selectedClassIds.includes(c.id)}
+                  onChange={(e) => {
+                    if (e.target.checked) {
+                      setSelectedClassIds(prev => [...prev, c.id]);
+                    } else {
+                      if (selectedClassIds.length > 1) {
+                        setSelectedClassIds(prev => prev.filter(id => id !== c.id));
+                      }
+                    }
+                  }}
+                />
+                {c.name}
+              </label>
+            ))}
+          </div>
         </div>
         
         <div className="p-6 overflow-y-auto space-y-8 flex-1">

@@ -42,8 +42,8 @@ const isMergeable = (b1: TimetableBlock | undefined, b2: TimetableBlock | undefi
   if (s1.length !== s2.length || s1.length === 0) return false;
 
   const isBatch = b1.isBatch && b2.isBatch;
-  // 選択科目の判定: 全てがisElectiveフラグを持っているか、あるいは複数科目が登録されている場合は選択科目とみなす
-  const isElective = (s1.every(s => s.isElective) && s2.every(s => s.isElective)) || (s1.length > 1 && s2.length > 1 && s1.length === s2.length);
+  // 選択科目の判定: 選択科目フラグ（isElective）が立っている場合のみ選択科目とみなす
+  const isElective = s1.some(s => s.isElective) && s2.some(s => s.isElective);
 
   // 一括変更で作成されたブロック、または選択科目の場合のみマージを許可
   if (!isBatch && !isElective) return false;
@@ -343,15 +343,38 @@ export function TimetableBoard({ isExporting = false }: { isExporting?: boolean 
                     isGroupVisible = anyModified;
                   }
 
-                  const block = isGroupVisible ? realBlock : undefined;
-
                   // 完全に空のマスの場合（非表示とは異なる）
-                  if (!block && !realBlock) {
+                  if (!realBlock) {
                     cells.push({ cls, period, w: 1, h: 1, block: undefined, cIdx, pIdx });
                     visited.add(key);
                     continue;
                   }
-                  
+
+                  let combinedSubClasses = realBlock.subClasses || [];
+                  if (w > 1 || h > 1) {
+                    // 結合対象の全ブロックから教員データを抽出して重複排除
+                    const uniqueSubs = new Map<string, any>();
+                    for (let hp = 0; hp < h; hp++) {
+                      for (let wp = 0; wp < w; wp++) {
+                        const vp = activePeriods[pIdx + hp];
+                        const vc = filteredClasses[cIdx + wp];
+                        const b = getBlock(vc.id, vp);
+                        if (b && b.subClasses) {
+                          b.subClasses.forEach(sub => {
+                            // subject と teacher の組み合わせで一意にする
+                            const subKey = `${sub.subject}-${sub.teacher}`;
+                            if (!uniqueSubs.has(subKey)) {
+                              uniqueSubs.set(subKey, sub);
+                            }
+                          });
+                        }
+                      }
+                    }
+                    combinedSubClasses = Array.from(uniqueSubs.values());
+                  }
+
+                  const blockToRender = isGroupVisible ? { ...realBlock, subClasses: combinedSubClasses } : undefined;
+
                   // Mark region as visited
                   const currentMergedClassIds: string[] = [];
                   const currentMergedPeriods: number[] = [];
@@ -370,7 +393,7 @@ export function TimetableBoard({ isExporting = false }: { isExporting?: boolean 
                     }
                   }
                   
-                  cells.push({ cls, period, w, h, block, cIdx, pIdx, mergedClassIds: currentMergedClassIds, mergedPeriods: currentMergedPeriods });
+                  cells.push({ cls, period, w, h, block: blockToRender, cIdx, pIdx, mergedClassIds: currentMergedClassIds, mergedPeriods: currentMergedPeriods });
                 }
               }
 
