@@ -109,8 +109,6 @@ export function DraggableBlock({ block, onClick, duplicateTeachers = [], mergedC
             return acc;
           }, {} as Record<string, typeof block.subClasses>);
 
-          const hasAnyTask = displaySubClasses.some(s => s.hasTask);
-
           if (isChangeOnlyView) {
             return (
               <div className={`flex ${block.isBatch ? 'flex-col justify-center' : 'flex-row justify-center items-center'} gap-px md:gap-0.5 w-full flex-1 overflow-hidden`}>
