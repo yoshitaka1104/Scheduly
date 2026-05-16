@@ -154,13 +154,28 @@ export function DraggableBlock({ block, onClick, duplicateTeachers = [], mergedC
                     );
                   })}
                 </div>
-                {hasAnyTask && (
-                  <div className="flex justify-center pb-0.5 shrink-0">
-                    <span className="px-2 py-0.5 rounded-sm text-[11px] md:text-[12px] font-black bg-amber-500 text-white shadow-sm tracking-wider whitespace-nowrap">
-                      課題
-                    </span>
-                  </div>
-                )}
+                {(() => {
+                  if (!hasAnyTask) return null;
+                  
+                  // 同じ科目で複数教員がいる科目のタスクのみを抽出
+                  const taskSubs = displaySubClasses.filter(s => s.hasTask);
+                  const teacherNames = Array.from(new Set(taskSubs.filter(s => {
+                    const sameSubjects = displaySubClasses.filter(sub => sub.subject === s.subject);
+                    return sameSubjects.length > 1;
+                  }).map(s => s.teacher ? s.teacher.split(/[,\s・、\n]/)[0] : ''))).filter(Boolean);
+
+                  if (teacherNames.length === 0) return null;
+
+                  return (
+                    <div className="flex justify-center pb-0.5 shrink-0 gap-1">
+                      {teacherNames.map((name, idx) => (
+                        <span key={idx} className="px-2 py-0.5 rounded-sm text-[11px] md:text-[12px] font-black bg-amber-500 text-white shadow-sm tracking-wider whitespace-nowrap">
+                          {name}
+                        </span>
+                      ))}
+                    </div>
+                  );
+                })()}
               </>
             );
           }
@@ -169,11 +184,17 @@ export function DraggableBlock({ block, onClick, duplicateTeachers = [], mergedC
           return (
             <div className={`flex ${block.isBatch ? 'flex-col justify-center' : 'flex-row justify-center items-center'} gap-px md:gap-0.5 w-full h-full`}>
               {Object.entries(grouped).map(([subject, subs]) => {
-                const hasTask = subs.some(s => s.hasTask);
+                const tasks = subs.filter(s => s.hasTask);
                 const locations = Array.from(new Set(subs.map(s => s.location).filter(Boolean)));
+                
+                // 同じ科目で複数の教員がいる場合のみバッジを表示する
+                const taskBadges = tasks.filter(taskSub => subs.length > 1 && taskSub.teacher).map(taskSub => {
+                  return taskSub.teacher ? taskSub.teacher.split(/[,\s・、\n]/)[0] : '';
+                }).filter(Boolean);
+
                 let verticalFontSize = 'clamp(14px, 21cqh, 20px)';
                 if (subject.length >= 4) {
-                  verticalFontSize = (hasTask || locations.length > 0) ? 'clamp(11px, 15cqh, 14px)' : 'clamp(12px, 17cqh, 16px)';
+                  verticalFontSize = (taskBadges.length > 0 || locations.length > 0) ? 'clamp(11px, 15cqh, 14px)' : 'clamp(12px, 17cqh, 16px)';
                 }
                 return (
                   <div key={subject} className={`flex flex-col items-center justify-center h-full shrink-0 ${block.isBatch ? 'text-center w-full' : ''}`}>
@@ -193,13 +214,13 @@ export function DraggableBlock({ block, onClick, duplicateTeachers = [], mergedC
                       >
                         {subject}
                       </span>
-                      {hasTask && (
-                        <div className="flex gap-0.5 items-center flex-shrink-0 mt-1">
+                      {taskBadges.map((name, idx) => (
+                        <div key={idx} className="flex gap-0.5 items-center flex-shrink-0 mt-1">
                           <span className="px-2 py-0.5 rounded-sm text-[11px] md:text-[12px] font-black bg-amber-500 text-white shadow-sm tracking-wider whitespace-nowrap">
-                            課題
+                            {name}
                           </span>
                         </div>
-                      )}
+                      ))}
                     </div>
                     {locations.length > 0 && (
                       <div className={`flex flex-wrap gap-1 mt-1.5 justify-center ${block.isBatch ? 'w-full' : ''}`}>
