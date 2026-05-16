@@ -48,10 +48,6 @@ const isMergeable = (b1: TimetableBlock | undefined, b2: TimetableBlock | undefi
   // 一括変更で作成されたブロック、または選択科目の場合のみマージを許可
   if (!isBatch && !isElective) return false;
 
-  // 「総探」が含まれる場合は、一括変更でない限り結合しない
-  if (!isBatch && (s1.some(s => s.subject.includes('総探')) || s2.some(s => s.subject.includes('総探')))) {
-    return false;
-  }
 
   // 科目名が完全に一致するか確認（教員名や教室の違いは無視して結合する）
   for (let i = 0; i < s1.length; i++) {
