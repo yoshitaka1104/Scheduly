@@ -87,7 +87,7 @@ export function TimetableBoard({ isExporting = false }: { isExporting?: boolean 
   activePeriods.forEach(p => {
     rowTemplates.push('minmax(100px, 1fr)');
     if (hasLunchSpacer && p === 4) {
-      rowTemplates.push('16px'); // 昼休み用のスペーサー行
+      rowTemplates.push('8px'); // 昼休み用のスペーサー行（少し狭めに調整）
     }
   });
 
