@@ -113,70 +113,59 @@ export function DraggableBlock({ block, onClick, duplicateTeachers = [], mergedC
 
           if (isChangeOnlyView) {
             return (
-              <>
-                <div className={`flex ${block.isBatch ? 'flex-col justify-center' : 'flex-row justify-center items-center'} gap-px md:gap-0.5 w-full flex-1 overflow-hidden`}>
-                  {Object.entries(grouped).map(([subject, subs]) => {
-                    const locations = Array.from(new Set(subs.map(s => s.location).filter(Boolean)));
-                    // 文字数によるフォントサイズ調整
-                    let verticalFontSize = 'clamp(14px, 21cqh, 20px)';
-                    if (subject.length >= 4) {
-                      verticalFontSize = 'clamp(11px, 15cqh, 14px)';
-                    }
-                    return (
-                      <div key={subject} className={`flex flex-col items-center justify-center h-full shrink-0 ${block.isBatch ? 'text-center w-full' : ''}`}>
-                        <div className={`flex ${block.isBatch ? 'items-center justify-center w-full' : 'flex-col items-center justify-center gap-0.5 h-full'}`}>
-                          <span 
-                            className={`font-black text-slate-800 tracking-tight shrink-0 ${block.isBatch ? 'leading-none truncate break-words' : 'leading-none text-center'}`}
-                            style={block.isBatch 
-                              ? { fontSize: 'min(45cqmin, 80px)', maxWidth: '95%' } 
-                              : { 
-                                  writingMode: 'vertical-rl', 
-                                  textOrientation: 'upright', 
-                                  textAlign: 'center',
-                                  maxHeight: '100%',
-                                  fontSize: verticalFontSize
-                                }
-                            }
-                          >
-                            {subject}
-                          </span>
-                        </div>
-                        {locations.length > 0 && (
-                          <div className={`flex flex-wrap gap-1 mt-1.5 justify-center ${block.isBatch ? 'w-full' : ''}`}>
-                            {locations.map((loc, idx) => (
-                              <span key={idx} className="text-[11px] md:text-[12px] font-black text-sky-800 bg-sky-100 border border-sky-300 px-2 py-0.5 rounded-sm shadow-sm truncate max-w-full tracking-wide">
-                                {loc}
-                              </span>
-                            ))}
-                          </div>
-                        )}
-                      </div>
-                    );
-                  })}
-                </div>
-                {(() => {
-                  if (!hasAnyTask) return null;
+              <div className={`flex ${block.isBatch ? 'flex-col justify-center' : 'flex-row justify-center items-center'} gap-px md:gap-0.5 w-full flex-1 overflow-hidden`}>
+                {Object.entries(grouped).map(([subject, subs]) => {
+                  const tasks = subs.filter(s => s.hasTask);
+                  const locations = Array.from(new Set(subs.map(s => s.location).filter(Boolean)));
                   
-                  // 同じ科目で複数教員がいる科目のタスクのみを抽出
-                  const taskSubs = displaySubClasses.filter(s => s.hasTask);
-                  const teacherNames = Array.from(new Set(taskSubs.filter(s => {
-                    const sameSubjects = displaySubClasses.filter(sub => sub.subject === s.subject);
-                    return sameSubjects.length > 1;
-                  }).map(s => s.teacher ? s.teacher.split(/[,\s・、\n]/)[0] : ''))).filter(Boolean);
+                  // 同じ科目で複数の教員がいる場合のみバッジを表示する
+                  const taskBadges = tasks.filter(taskSub => subs.length > 1 && taskSub.teacher).map(taskSub => {
+                    return taskSub.teacher ? taskSub.teacher.split(/[,\s・、\n]/)[0] : '';
+                  }).filter(Boolean);
 
-                  if (teacherNames.length === 0) return null;
-
+                  let verticalFontSize = 'clamp(14px, 21cqh, 20px)';
+                  if (subject.length >= 4) {
+                    verticalFontSize = (taskBadges.length > 0 || locations.length > 0) ? 'clamp(11px, 15cqh, 14px)' : 'clamp(12px, 17cqh, 16px)';
+                  }
                   return (
-                    <div className="flex justify-center pb-0.5 shrink-0 gap-1">
-                      {teacherNames.map((name, idx) => (
-                        <span key={idx} className="px-2 py-0.5 rounded-sm text-[11px] md:text-[12px] font-black bg-amber-500 text-white shadow-sm tracking-wider whitespace-nowrap">
-                          {name}
+                    <div key={subject} className={`flex flex-col items-center justify-center h-full shrink-0 ${block.isBatch ? 'text-center w-full' : ''}`}>
+                      <div className={`flex ${block.isBatch ? 'items-center justify-center w-full' : 'flex-col items-center justify-center gap-0.5 h-full'}`}>
+                        <span 
+                          className={`font-black text-slate-800 tracking-tight shrink-0 ${block.isBatch ? 'leading-none truncate break-words' : 'leading-none text-center'}`}
+                          style={block.isBatch 
+                            ? { fontSize: 'min(45cqmin, 80px)', maxWidth: '95%' } 
+                            : { 
+                                writingMode: 'vertical-rl', 
+                                textOrientation: 'upright', 
+                                textAlign: 'center',
+                                maxHeight: '100%',
+                                fontSize: verticalFontSize
+                              }
+                          }
+                        >
+                          {subject}
                         </span>
-                      ))}
+                        {taskBadges.map((name, idx) => (
+                          <div key={idx} className="flex gap-0.5 items-center flex-shrink-0 mt-1">
+                            <span className="px-2 py-0.5 rounded-sm text-[11px] md:text-[12px] font-black bg-amber-500 text-white shadow-sm tracking-wider whitespace-nowrap">
+                              {name}
+                            </span>
+                          </div>
+                        ))}
+                      </div>
+                      {locations.length > 0 && (
+                        <div className={`flex flex-wrap gap-1 mt-1.5 justify-center ${block.isBatch ? 'w-full' : ''}`}>
+                          {locations.map((loc, idx) => (
+                            <span key={idx} className="text-[11px] md:text-[12px] font-black text-sky-800 bg-sky-100 border border-sky-300 px-2 py-0.5 rounded-sm shadow-sm truncate max-w-full tracking-wide">
+                              {loc}
+                            </span>
+                          ))}
+                        </div>
+                      )}
                     </div>
                   );
-                })()}
-              </>
+                })}
+              </div>
             );
           }
 
