@@ -378,7 +378,7 @@ export function TimetableBoard({ isExporting = false }: { isExporting?: boolean 
                   let combinedSubClasses = realBlock.subClasses || [];
                   if (w > 1 || h > 1) {
                     // 結合対象の全ブロックから教員データを抽出して重複排除
-                    const uniqueSubs = new Map<string, any>();
+                    const uniqueSubs = new Map<string, typeof combinedSubClasses[0]>();
                     for (let hp = 0; hp < h; hp++) {
                       for (let wp = 0; wp < w; wp++) {
                         const vp = activePeriods[pIdx + hp];
