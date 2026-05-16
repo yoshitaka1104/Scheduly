@@ -87,7 +87,7 @@ export function TimetableBoard({ isExporting = false }: { isExporting?: boolean 
   activePeriods.forEach(p => {
     rowTemplates.push('minmax(100px, 1fr)');
     if (hasLunchSpacer && p === 4) {
-      rowTemplates.push('8px'); // 昼休み用のスペーサー行（少し狭めに調整）
+      rowTemplates.push('6px'); // 昼休み用のスペーサー行
     }
   });
 
@@ -96,7 +96,7 @@ export function TimetableBoard({ isExporting = false }: { isExporting?: boolean 
     colTemplates.push('minmax(0, 1fr)');
     const nextCls = filteredClasses[i + 1];
     if (nextCls && cls.grade !== nextCls.grade) {
-      colTemplates.push('5px'); // 学年境界のスペーサー行
+      colTemplates.push('4px'); // 学年境界のスペーサー列
     }
   });
 
@@ -272,13 +272,12 @@ export function TimetableBoard({ isExporting = false }: { isExporting?: boolean 
             {/* 4限目と5限目の境界線（横二重線・昼休み） */}
             {hasLunchSpacer && (
               <div 
-                className="pointer-events-none z-0 flex items-center"
+                className="pointer-events-none z-0 flex items-center justify-center"
                 style={{
                   gridColumn: '1 / -1',
                   gridRow: getGridRow(4) + 1,
                   width: '100%',
-                  height: '100%',
-                  paddingTop: '2px'
+                  height: '100%'
                 }}
               >
                 <div className="w-full border-b-[4px] border-double border-slate-400 opacity-60" />
