@@ -63,7 +63,34 @@ export function TimetableBoard({ isExporting = false }: { isExporting?: boolean 
   
   const filteredClasses = classes.filter(cls => visibleGrades.includes(cls.grade));
   const activePeriods = Array.from({ length: settings.periodsPerDay }, (_, i) => i + 1);
-  
+  const hasLunchSpacer = activePeriods.includes(4) && activePeriods.includes(5);
+
+  const getGridRow = (period: number) => {
+    const baseIndex = activePeriods.indexOf(period);
+    if (baseIndex === -1) return 2;
+    const offset = (hasLunchSpacer && period >= 5) ? 1 : 0;
+    return baseIndex + 2 + offset;
+  };
+
+  const getRowSpan = (startPeriod: number, height: number) => {
+    let span = height;
+    if (hasLunchSpacer) {
+      const endPeriod = startPeriod + height - 1;
+      if (startPeriod <= 4 && endPeriod >= 5) {
+        span += 1;
+      }
+    }
+    return span;
+  };
+
+  const rowTemplates = ['auto'];
+  activePeriods.forEach(p => {
+    rowTemplates.push('minmax(100px, 1fr)');
+    if (hasLunchSpacer && p === 4) {
+      rowTemplates.push('16px'); // 昼休み用のスペーサー行
+    }
+  });
+
   const [activeDetailsBlock, setActiveDetailsBlock] = useState<{ block: TimetableBlock, mergedClassIds: string[], mergedPeriods: number[] } | null>(null);
 
   const sensors = useSensors(
@@ -180,7 +207,7 @@ export function TimetableBoard({ isExporting = false }: { isExporting?: boolean 
             className="grid timetable-grid relative pb-2" 
             style={{ 
               gridTemplateColumns: `40px repeat(${filteredClasses.length}, minmax(0, 1fr))`,
-              gridTemplateRows: `auto repeat(${activePeriods.length}, minmax(100px, 1fr))`,
+              gridTemplateRows: rowTemplates.join(' '),
               '--gap-size': '2px'
             } as React.CSSProperties}
           >
@@ -208,18 +235,20 @@ export function TimetableBoard({ isExporting = false }: { isExporting?: boolean 
               return null;
             })}
 
-            {/* 4限目と5限目の境界線（横二重線） */}
-            {activePeriods.includes(4) && activePeriods.includes(5) && (
+            {/* 4限目と5限目の境界線（横二重線・昼休み） */}
+            {hasLunchSpacer && (
               <div 
-                className="pointer-events-none z-0 border-b-[4px] border-double border-slate-400"
+                className="pointer-events-none z-0 flex items-center"
                 style={{
                   gridColumn: '1 / -1',
-                  gridRow: activePeriods.indexOf(4) + 2,
+                  gridRow: getGridRow(4) + 1,
                   width: '100%',
                   height: '100%',
-                  transform: 'translateY(calc(var(--gap-size) / 2 + 2px))'
+                  paddingTop: '2px'
                 }}
-              />
+              >
+                <div className="w-full border-b-[4px] border-double border-slate-400 opacity-60" />
+              </div>
             )}
             
             {/* Class Headers */}
@@ -240,7 +269,7 @@ export function TimetableBoard({ isExporting = false }: { isExporting?: boolean 
               <div 
                 key={`period-${period}`} 
                 className="flex relative"
-                style={{ gridColumnStart: 1, gridRowStart: i + 2 }}
+                style={{ gridColumnStart: 1, gridRowStart: getGridRow(period) }}
               >
                 <div className="w-full flex items-center justify-center font-bold text-indigo-900 bg-indigo-100 rounded-xl py-4 border border-indigo-200 text-sm shadow-sm h-full max-h-[140px] m-auto sticky left-0 z-10">
                   {period}
@@ -403,7 +432,7 @@ export function TimetableBoard({ isExporting = false }: { isExporting?: boolean 
                     key={cellId} 
                     style={{ 
                       gridColumn: `${cIdx + 2} / span ${w}`, 
-                      gridRow: `${pIdx + 2} / span ${h}`,
+                      gridRow: `${getGridRow(period)} / span ${getRowSpan(period, h)}`,
                       minWidth: 0,
                       minHeight: 0
                     }}
