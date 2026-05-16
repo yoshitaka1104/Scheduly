@@ -1,7 +1,7 @@
 import { useState, useMemo } from 'react';
 import { useTimetableStore } from '../store/useTimetableStore';
 import { format } from 'date-fns';
-import { Period, TimetableBlock, SubClass } from '../types';
+import { Period, TimetableBlock, SubClass, ClassInfo } from '../types';
 import { 
   DndContext, 
   DragEndEvent, 
@@ -265,7 +265,7 @@ export function TimetableBoard({ isExporting = false }: { isExporting?: boolean 
             ))}
 
             {/* Period Labels */}
-            {activePeriods.map((period, i) => (
+            {activePeriods.map((period) => (
               <div 
                 key={`period-${period}`} 
                 className="flex relative"
@@ -279,7 +279,7 @@ export function TimetableBoard({ isExporting = false }: { isExporting?: boolean 
 
             {/* Timetable Cells with 2D Merging */}
             {(() => {
-              const cells: { cls: any, period: Period, w: number, h: number, block?: TimetableBlock, cIdx: number, pIdx: number, mergedClassIds?: string[], mergedPeriods?: number[] }[] = [];
+              const cells: { cls: ClassInfo, period: Period, w: number, h: number, block?: TimetableBlock, cIdx: number, pIdx: number, mergedClassIds?: string[], mergedPeriods?: number[] }[] = [];
               const visited = new Set<string>();
 
               // Precalculate duplicate teachers for each period
@@ -423,7 +423,7 @@ export function TimetableBoard({ isExporting = false }: { isExporting?: boolean 
               }
 
               return cells.map(cell => {
-                const { cls, period, w, h, block, cIdx, pIdx, mergedClassIds, mergedPeriods } = cell;
+                const { cls, period, w, h, block, cIdx, mergedClassIds, mergedPeriods } = cell;
                 const cellId = `cell-${cls.id}-${period}`;
                 const duplicateTeachers = duplicateTeachersByPeriod.get(period) || [];
 
