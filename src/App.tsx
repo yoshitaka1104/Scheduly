@@ -23,6 +23,7 @@ function App() {
   const [isExportModalOpen, setIsExportModalOpen] = React.useState(false);
   const [isExporting, setIsExporting] = React.useState(false);
   const { currentDate, setCurrentDate, visibleGrades, setVisibleGrades, pastBlocks, undo, isChangeOnlyView, setIsChangeOnlyView } = useTimetableStore();
+  const dateInputRef = React.useRef<HTMLInputElement>(null);
 
   const handlePrevDay = () => setCurrentDate(subDays(currentDate, 1));
   const handleNextDay = () => setCurrentDate(addDays(currentDate, 1));
@@ -134,9 +135,31 @@ function App() {
             >
               <ChevronLeft className="h-6 w-6" />
             </button>
-            <h2 className="text-2xl font-bold text-slate-800 w-56 text-center flex-shrink-0 whitespace-nowrap">
-              {format(currentDate, 'yyyy年M月d日 (E)', { locale: ja })}
-            </h2>
+            <div 
+              className="relative group cursor-pointer flex items-center justify-center rounded-lg hover:bg-indigo-50 transition-colors px-2 py-1"
+              onClick={() => {
+                try {
+                  dateInputRef.current?.showPicker();
+                } catch (e) {
+                  dateInputRef.current?.focus();
+                }
+              }}
+            >
+              <h2 className="text-2xl font-bold text-slate-800 w-56 text-center flex-shrink-0 whitespace-nowrap group-hover:text-indigo-700 transition-colors">
+                {format(currentDate, 'yyyy年M月d日 (E)', { locale: ja })}
+              </h2>
+              <input
+                ref={dateInputRef}
+                type="date"
+                className="absolute inset-0 opacity-0 cursor-pointer pointer-events-none"
+                value={format(currentDate, 'yyyy-MM-dd')}
+                onChange={(e) => {
+                  if (e.target.value) {
+                    setCurrentDate(new Date(e.target.value));
+                  }
+                }}
+              />
+            </div>
             <button 
               onClick={handleNextDay}
               className="p-2 hover:bg-slate-100 rounded-full transition-colors text-slate-600 flex-shrink-0"
