@@ -1,7 +1,7 @@
 import { useState, useMemo } from 'react';
 import { useTimetableStore } from '../store/useTimetableStore';
 import { format } from 'date-fns';
-import { Period, TimetableBlock } from '../types';
+import { Period, TimetableBlock, SubClass } from '../types';
 import { 
   DndContext, 
   DragEndEvent, 
@@ -286,7 +286,7 @@ export function TimetableBoard({ isExporting = false }: { isExporting?: boolean 
               const duplicateTeachersByPeriod = new Map<number, string[]>();
               activePeriods.forEach(p => {
                 const blocksInPeriod = blocksForToday.filter(b => b.period === p);
-                const teacherSubClasses = new Map<string, Array<{sub: any, block: TimetableBlock}>>();
+                const teacherSubClasses = new Map<string, Array<{sub: SubClass, block: TimetableBlock}>>();
                 blocksInPeriod.forEach(b => {
                   b.subClasses?.forEach(sub => {
                     const teachers = parseTeachers(sub.teacher);
@@ -398,7 +398,7 @@ export function TimetableBoard({ isExporting = false }: { isExporting?: boolean 
                     combinedSubClasses = Array.from(uniqueSubs.values());
                   }
 
-                  const blockToRender = isGroupVisible ? { ...realBlock, subClasses: combinedSubClasses } : undefined;
+                  const blockToRender = isGroupVisible ? { ...realBlock, subClasses: combinedSubClasses } as TimetableBlock : undefined;
 
                   // Mark region as visited
                   const currentMergedClassIds: string[] = [];
