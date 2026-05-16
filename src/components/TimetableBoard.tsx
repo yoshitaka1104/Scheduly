@@ -461,7 +461,7 @@ export function TimetableBoard({ isExporting = false }: { isExporting?: boolean 
                       {block ? (
                         <DraggableBlock 
                           block={block} 
-                          onClick={() => setActiveDetailsBlock({ block, mergedClassIds, mergedPeriods })}
+                          onClick={() => setActiveDetailsBlock({ block, mergedClassIds: mergedClassIds || [cls.id], mergedPeriods: mergedPeriods || [period] })}
                           duplicateTeachers={duplicateTeachers}
                           mergedClassIds={mergedClassIds}
                           mergedPeriods={mergedPeriods}
