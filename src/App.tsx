@@ -227,17 +227,17 @@ function App() {
                     {format(currentDate, 'yyyy年M月d日 (E)', { locale: ja })}
                     {isChangeOnlyView ? ' 【変更のみ】' : ''}
                   </div>
-                  <div className="flex items-center gap-6 text-2xl font-bold bg-white px-5 py-2.5 rounded-xl border border-slate-200 shadow-sm">
-                    <div className="flex items-center gap-2.5">
-                      <div className="w-6 h-6 rounded shadow-sm border bg-emerald-100 border-emerald-300"></div>
+                  <div className="flex items-center gap-5 text-xl font-bold bg-white px-4 py-2 rounded-xl border border-slate-200 shadow-sm">
+                    <div className="flex items-center gap-2">
+                      <div className="w-5 h-5 rounded shadow-sm border bg-emerald-100 border-emerald-300"></div>
                       <span className="text-slate-600 tracking-wide">授業変更</span>
                     </div>
-                    <div className="flex items-center gap-2.5">
-                      <div className="w-6 h-6 rounded shadow-sm border bg-amber-100 border-amber-300"></div>
+                    <div className="flex items-center gap-2">
+                      <div className="w-5 h-5 rounded shadow-sm border bg-amber-100 border-amber-300"></div>
                       <span className="text-slate-600 tracking-wide">課題</span>
                     </div>
-                    <div className="flex items-center gap-2.5">
-                      <div className="w-6 h-6 rounded shadow-sm border bg-sky-100 border-sky-300"></div>
+                    <div className="flex items-center gap-2">
+                      <div className="w-5 h-5 rounded shadow-sm border bg-sky-100 border-sky-300"></div>
                       <span className="text-slate-600 tracking-wide">場所変更</span>
                     </div>
                   </div>
