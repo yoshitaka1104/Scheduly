@@ -72,6 +72,24 @@ export function BlockDetailsModal({ activeItem, onClose }: Props) {
     }));
   };
 
+  const handleAddSubClass = () => {
+    setEditedSubClasses(prev => [
+      ...prev,
+      {
+        id: crypto.randomUUID ? crypto.randomUUID() : Math.random().toString(36).substring(2),
+        subject: prev[0]?.subject || '',
+        teacher: '',
+        isElective: prev[0]?.isElective || false,
+        hasTask: false,
+        location: ''
+      }
+    ]);
+  };
+
+  const handleRemoveSubClass = (id: string) => {
+    setEditedSubClasses(prev => prev.filter(s => s.id !== id));
+  };
+
   const handleSave = () => {
     const isChanged = JSON.stringify(block.subClasses) !== JSON.stringify(editedSubClasses);
     if (isChanged) {
@@ -154,11 +172,21 @@ export function BlockDetailsModal({ activeItem, onClose }: Props) {
             const availableSubjects = teacherToSubjectsMap[sub.teacher] || [];
 
             return (
-              <div key={sub.id} className="space-y-6 pb-8 border-b-[3px] border-slate-400/50 last:border-0 last:pb-0 mt-6 relative">
-                <h3 className="font-bold text-slate-800 text-lg flex items-center gap-2 absolute -top-4 left-0 bg-white pr-3">
-                  <div className="w-1.5 h-5 bg-indigo-500 rounded-full" />
-                  {sub.subject} <span className="text-sm font-normal text-slate-400">の設定</span>
-                </h3>
+                <div className="flex justify-between items-center absolute -top-4 left-0 right-0">
+                  <h3 className="font-bold text-slate-800 text-lg flex items-center gap-2 bg-white pr-3 pl-1">
+                    <div className="w-1.5 h-5 bg-indigo-500 rounded-full" />
+                    {sub.subject || '科目未定'} <span className="text-sm font-normal text-slate-400">の設定</span>
+                  </h3>
+                  {editedSubClasses.length > 1 && (
+                    <button 
+                      onClick={() => handleRemoveSubClass(sub.id)}
+                      className="text-red-500 hover:text-red-700 bg-white pl-3 text-sm font-bold flex items-center gap-1 transition-colors"
+                    >
+                      <X className="w-4 h-4" />
+                      この枠を削除
+                    </button>
+                  )}
+                </div>
 
                 <div className="pt-4 space-y-6">
                   <div className="flex items-center gap-4">
@@ -253,6 +281,18 @@ export function BlockDetailsModal({ activeItem, onClose }: Props) {
               </div>
             );
           })}
+          
+          <div className="pt-2">
+            <button
+              onClick={handleAddSubClass}
+              className="w-full py-3 border-2 border-dashed border-indigo-200 text-indigo-600 rounded-xl font-bold hover:bg-indigo-50 transition-colors flex items-center justify-center gap-2"
+            >
+              <div className="bg-indigo-100 rounded-full p-1">
+                <User className="w-4 h-4" />
+              </div>
+              ＋ もう1名、担当教員を追加する
+            </button>
+          </div>
         </div>
         
         <div className="p-4 border-t border-slate-100 bg-white flex-shrink-0">
