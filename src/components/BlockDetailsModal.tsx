@@ -172,6 +172,7 @@ export function BlockDetailsModal({ activeItem, onClose }: Props) {
             const availableSubjects = teacherToSubjectsMap[sub.teacher] || [];
 
             return (
+              <div key={sub.id} className="space-y-6 pb-8 border-b-[3px] border-slate-400/50 last:border-0 last:pb-0 mt-6 relative">
                 <div className="flex justify-between items-center absolute -top-4 left-0 right-0">
                   <h3 className="font-bold text-slate-800 text-lg flex items-center gap-2 bg-white pr-3 pl-1">
                     <div className="w-1.5 h-5 bg-indigo-500 rounded-full" />
