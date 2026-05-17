@@ -2,6 +2,7 @@ import React from 'react';
 import { useDraggable } from '@dnd-kit/core';
 import { CSS } from '@dnd-kit/utilities';
 import { TimetableBlock } from '../types';
+import { useTimetableStore } from '../store/useTimetableStore';
 
 interface Props {
   block: TimetableBlock;
@@ -17,6 +18,8 @@ export function DraggableBlock({ block, onClick, duplicateTeachers = [], mergedC
     id: block.id,
     data: { block, mergedClassIds, mergedPeriods }
   });
+
+  const displayMode = useTimetableStore(state => state.displayMode);
 
   let displaySubClasses = block.subClasses || [];
   if (isChangeOnlyView && block.isBase) {
@@ -104,40 +107,43 @@ export function DraggableBlock({ block, onClick, duplicateTeachers = [], mergedC
       <div className="w-full h-full pointer-events-none relative z-10 overflow-hidden flex flex-col">
         {(() => {
           const grouped = displaySubClasses.reduce((acc, sub) => {
-            if (!acc[sub.subject]) acc[sub.subject] = [];
-            acc[sub.subject].push(sub);
+            const key = displayMode === 'teacher' ? (sub.teacher?.split(/[,\s・、\n]/)[0] || '未設定') : sub.subject;
+            if (!acc[key]) acc[key] = [];
+            acc[key].push(sub);
             return acc;
           }, {} as Record<string, typeof block.subClasses>);
 
           if (isChangeOnlyView) {
             return (
               <div className={`flex ${block.isBatch ? 'flex-col justify-center' : 'flex-row justify-center items-center'} gap-px md:gap-0.5 w-full flex-1 overflow-hidden`}>
-                {Object.entries(grouped).map(([subject, subs]) => {
-                  const tasks = subs.filter(s => s.hasTask);
+                {Object.entries(grouped).map(([mainText, subs]) => {
                   const locations = Array.from(new Set(subs.map(s => s.location).filter(Boolean)));
                   
-                  // 元のデータ（block.subClasses）全体を見て、この科目に複数の教員（エントリ）があるか判定する
-                  const originalSubsForSubject = block.subClasses?.filter(s => s.subject === subject) || [];
-                  const isDuplicatedSubject = originalSubsForSubject.length > 1;
-
-                  // 同じ科目で複数の教員がいる場合のみバッジを表示する
-                  const taskBadges = tasks.filter(taskSub => isDuplicatedSubject && taskSub.teacher).map(taskSub => {
-                    return taskSub.teacher ? taskSub.teacher.split(/[,\s・、\n]/)[0] : '';
-                  }).filter(Boolean);
+                  let badges: string[] = [];
+                  if (displayMode === 'subject') {
+                    const tasks = subs.filter(s => s.hasTask);
+                    const originalSubsForSubject = block.subClasses?.filter(s => s.subject === mainText) || [];
+                    const isDuplicatedSubject = originalSubsForSubject.length > 1;
+                    badges = tasks.filter(taskSub => isDuplicatedSubject && taskSub.teacher).map(taskSub => {
+                      return taskSub.teacher ? taskSub.teacher.split(/[,\s・、\n]/)[0] : '';
+                    }).filter(Boolean);
+                  } else {
+                    badges = Array.from(new Set(subs.map(s => s.subject).filter(Boolean)));
+                  }
 
                   let verticalFontSize = 'clamp(14px, 21cqh, 20px)';
-                  if (subject.length >= 4) {
-                    verticalFontSize = (taskBadges.length > 0 || locations.length > 0) ? 'clamp(11px, 15cqh, 14px)' : 'clamp(12px, 17cqh, 16px)';
+                  if (mainText.length >= 4) {
+                    verticalFontSize = (badges.length > 0 || locations.length > 0) ? 'clamp(11px, 15cqh, 14px)' : 'clamp(12px, 17cqh, 16px)';
                   }
 
                   return (
-                    <div key={subject} className={`flex flex-col items-center justify-center h-full shrink-0 ${block.isBatch ? 'text-center w-full px-1' : ''}`}>
+                    <div key={mainText} className={`flex flex-col items-center justify-center h-full shrink-0 ${block.isBatch ? 'text-center w-full px-1' : ''}`}>
                       <div className={`flex ${block.isBatch ? 'flex-col items-center justify-center w-full h-full overflow-hidden' : 'flex-col items-center justify-center gap-0.5 h-full'}`}>
                         <span 
                           className={`font-black text-slate-800 tracking-tight shrink-0 ${block.isBatch ? 'leading-none whitespace-nowrap overflow-hidden text-ellipsis' : 'leading-none text-center'}`}
                           style={block.isBatch 
                             ? { 
-                                fontSize: `min(calc(95cqw / ${Math.max(subject.length, 1)}), 80px, 80cqh)`, 
+                                fontSize: `min(calc(95cqw / ${Math.max(mainText.length, 1)}), 80px, 80cqh)`, 
                                 maxWidth: '100%',
                               } 
                             : { 
@@ -149,11 +155,11 @@ export function DraggableBlock({ block, onClick, duplicateTeachers = [], mergedC
                               }
                           }
                         >
-                          {subject}
+                          {mainText}
                         </span>
-                        {taskBadges.length > 0 && (
+                        {badges.length > 0 && (
                           <div className="flex flex-row flex-wrap justify-center gap-1 mt-1.5 w-full px-1">
-                            {taskBadges.map((name, idx) => (
+                            {badges.map((name, idx) => (
                               <span key={idx} className="px-1.5 py-0.5 rounded-sm text-[10px] md:text-[11px] font-black bg-amber-500 text-white shadow-sm tracking-wider whitespace-nowrap">
                                 {name}
                               </span>
@@ -180,32 +186,34 @@ export function DraggableBlock({ block, onClick, duplicateTeachers = [], mergedC
           // 通常表示（isChangeOnlyView === false）
           return (
             <div className={`flex ${block.isBatch ? 'flex-col justify-center' : 'flex-row justify-center items-center'} gap-px md:gap-0.5 w-full h-full`}>
-              {Object.entries(grouped).map(([subject, subs]) => {
-                const tasks = subs.filter(s => s.hasTask);
+              {Object.entries(grouped).map(([mainText, subs]) => {
                 const locations = Array.from(new Set(subs.map(s => s.location).filter(Boolean)));
                 
-                // 元のデータ（block.subClasses）全体を見て、この科目に複数の教員（エントリ）があるか判定する
-                const originalSubsForSubject = block.subClasses?.filter(s => s.subject === subject) || [];
-                const isDuplicatedSubject = originalSubsForSubject.length > 1;
-
-                // 同じ科目で複数の教員がいる場合のみバッジを表示する
-                const taskBadges = tasks.filter(taskSub => isDuplicatedSubject && taskSub.teacher).map(taskSub => {
-                  return taskSub.teacher ? taskSub.teacher.split(/[,\s・、\n]/)[0] : '';
-                }).filter(Boolean);
+                let badges: string[] = [];
+                if (displayMode === 'subject') {
+                  const tasks = subs.filter(s => s.hasTask);
+                  const originalSubsForSubject = block.subClasses?.filter(s => s.subject === mainText) || [];
+                  const isDuplicatedSubject = originalSubsForSubject.length > 1;
+                  badges = tasks.filter(taskSub => isDuplicatedSubject && taskSub.teacher).map(taskSub => {
+                    return taskSub.teacher ? taskSub.teacher.split(/[,\s・、\n]/)[0] : '';
+                  }).filter(Boolean);
+                } else {
+                  badges = Array.from(new Set(subs.map(s => s.subject).filter(Boolean)));
+                }
 
                 let verticalFontSize = 'clamp(14px, 21cqh, 20px)';
-                if (subject.length >= 4) {
-                  verticalFontSize = (taskBadges.length > 0 || locations.length > 0) ? 'clamp(11px, 15cqh, 14px)' : 'clamp(12px, 17cqh, 16px)';
+                if (mainText.length >= 4) {
+                  verticalFontSize = (badges.length > 0 || locations.length > 0) ? 'clamp(11px, 15cqh, 14px)' : 'clamp(12px, 17cqh, 16px)';
                 }
 
                 return (
-                  <div key={subject} className={`flex flex-col items-center justify-center h-full shrink-0 ${block.isBatch ? 'text-center w-full px-1' : ''}`}>
+                  <div key={mainText} className={`flex flex-col items-center justify-center h-full shrink-0 ${block.isBatch ? 'text-center w-full px-1' : ''}`}>
                     <div className={`flex ${block.isBatch ? 'flex-col items-center justify-center w-full h-full overflow-hidden' : 'flex-col items-center justify-center gap-0.5 h-full'}`}>
                       <span 
                         className={`font-black text-slate-800 tracking-tight shrink-0 ${block.isBatch ? 'leading-none whitespace-nowrap overflow-hidden text-ellipsis' : 'leading-none text-center'}`}
                         style={block.isBatch 
                           ? { 
-                              fontSize: `min(calc(95cqw / ${Math.max(subject.length, 1)}), 80px, 80cqh)`, 
+                              fontSize: `min(calc(95cqw / ${Math.max(mainText.length, 1)}), 80px, 80cqh)`, 
                               maxWidth: '100%',
                             } 
                           : { 
@@ -217,11 +225,11 @@ export function DraggableBlock({ block, onClick, duplicateTeachers = [], mergedC
                             }
                         }
                       >
-                        {subject}
+                        {mainText}
                       </span>
-                      {taskBadges.length > 0 && (
+                      {badges.length > 0 && (
                         <div className="flex flex-row flex-wrap justify-center gap-1 mt-1.5 w-full px-1">
-                          {taskBadges.map((name, idx) => (
+                          {badges.map((name, idx) => (
                             <span key={idx} className="px-1.5 py-0.5 rounded-sm text-[10px] md:text-[11px] font-black bg-amber-500 text-white shadow-sm tracking-wider whitespace-nowrap">
                               {name}
                             </span>

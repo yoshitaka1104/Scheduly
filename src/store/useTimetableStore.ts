@@ -30,6 +30,8 @@ interface TimetableState {
   undo: () => void;
   isChangeOnlyView: boolean;
   setIsChangeOnlyView: (value: boolean) => void;
+  displayMode: 'subject' | 'teacher';
+  setDisplayMode: (mode: 'subject' | 'teacher') => void;
 }
 
 const generateDefaultClasses = (): ClassInfo[] => {
@@ -126,7 +128,9 @@ export const useTimetableStore = create<TimetableState>()(
       visibleGrades: [1, 2, 3],
       pastBlocks: [],
       isChangeOnlyView: false,
+      displayMode: 'subject',
 
+      setDisplayMode: (mode) => set({ displayMode: mode }),
       setIsChangeOnlyView: (value) => set({ isChangeOnlyView: value }),
       setCurrentDate: (date) => set({ currentDate: date }),
       undo: () => set((state) => {

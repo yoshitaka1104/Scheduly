@@ -22,7 +22,7 @@ function App() {
   const [isLogModalOpen, setIsLogModalOpen] = React.useState(false);
   const [isExportModalOpen, setIsExportModalOpen] = React.useState(false);
   const [isExporting, setIsExporting] = React.useState(false);
-  const { currentDate, setCurrentDate, visibleGrades, setVisibleGrades, pastBlocks, undo, isChangeOnlyView, setIsChangeOnlyView } = useTimetableStore();
+  const { currentDate, setCurrentDate, visibleGrades, setVisibleGrades, pastBlocks, undo, isChangeOnlyView, setIsChangeOnlyView, displayMode, setDisplayMode } = useTimetableStore();
   const dateInputRef = React.useRef<HTMLInputElement>(null);
 
   const handlePrevDay = () => setCurrentDate(subDays(currentDate, 1));
@@ -88,6 +88,14 @@ function App() {
             <h1 className="text-xl font-bold text-slate-900 tracking-tight">Scheduly - 時間割管理アプリ</h1>
           </div>
           <nav className="flex gap-4">
+            <button 
+              onClick={() => {
+                setDisplayMode(displayMode === 'subject' ? 'teacher' : 'subject');
+              }}
+              className="flex items-center gap-2 bg-slate-50 hover:bg-slate-100 text-slate-700 px-4 py-2 rounded-lg font-bold transition-colors whitespace-nowrap border border-slate-200 shadow-sm"
+            >
+              {displayMode === 'subject' ? '表示：科目' : '表示：教員'}
+            </button>
             <button 
               onClick={() => setIsCopyModalOpen(true)}
               className="flex items-center gap-2 bg-indigo-50 hover:bg-indigo-100 text-indigo-700 px-4 py-2 rounded-lg font-bold transition-colors whitespace-nowrap border border-indigo-200 shadow-sm"
