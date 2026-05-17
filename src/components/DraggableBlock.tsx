@@ -151,13 +151,15 @@ export function DraggableBlock({ block, onClick, duplicateTeachers = [], mergedC
                         >
                           {subject}
                         </span>
-                        {taskBadges.map((name, idx) => (
-                          <div key={idx} className="flex gap-0.5 items-center flex-shrink-0 mt-1">
-                            <span className="px-2 py-0.5 rounded-sm text-[11px] md:text-[12px] font-black bg-amber-500 text-white shadow-sm tracking-wider whitespace-nowrap">
-                              {name}
-                            </span>
+                        {taskBadges.length > 0 && (
+                          <div className="flex flex-row flex-wrap justify-center gap-1 mt-1.5 w-full px-1">
+                            {taskBadges.map((name, idx) => (
+                              <span key={idx} className="px-1.5 py-0.5 rounded-sm text-[10px] md:text-[11px] font-black bg-amber-500 text-white shadow-sm tracking-wider whitespace-nowrap">
+                                {name}
+                              </span>
+                            ))}
                           </div>
-                        ))}
+                        )}
                       </div>
                       {locations.length > 0 && (
                         <div className={`flex flex-wrap gap-1 mt-1.5 justify-center ${block.isBatch ? 'w-full' : ''}`}>
@@ -217,13 +219,15 @@ export function DraggableBlock({ block, onClick, duplicateTeachers = [], mergedC
                       >
                         {subject}
                       </span>
-                      {taskBadges.map((name, idx) => (
-                        <div key={idx} className="flex gap-0.5 items-center flex-shrink-0 mt-1">
-                          <span className="px-2 py-0.5 rounded-sm text-[11px] md:text-[12px] font-black bg-amber-500 text-white shadow-sm tracking-wider whitespace-nowrap">
-                            {name}
-                          </span>
+                      {taskBadges.length > 0 && (
+                        <div className="flex flex-row flex-wrap justify-center gap-1 mt-1.5 w-full px-1">
+                          {taskBadges.map((name, idx) => (
+                            <span key={idx} className="px-1.5 py-0.5 rounded-sm text-[10px] md:text-[11px] font-black bg-amber-500 text-white shadow-sm tracking-wider whitespace-nowrap">
+                              {name}
+                            </span>
+                          ))}
                         </div>
-                      ))}
+                      )}
                     </div>
                     {locations.length > 0 && (
                       <div className={`flex flex-wrap gap-1 mt-1.5 justify-center ${block.isBatch ? 'w-full' : ''}`}>
