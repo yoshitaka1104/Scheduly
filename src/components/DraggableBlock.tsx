@@ -106,17 +106,32 @@ export function DraggableBlock({ block, onClick, duplicateTeachers = [], mergedC
 
       <div className="w-full h-full pointer-events-none relative z-10 overflow-hidden flex flex-col">
         {(() => {
-          const grouped = displaySubClasses.reduce((acc, sub) => {
-            const key = displayMode === 'teacher' ? (sub.teacher?.split(/[,\s・、\n]/)[0] || '未設定') : sub.subject;
-            if (!acc[key]) acc[key] = [];
-            acc[key].push(sub);
-            return acc;
-          }, {} as Record<string, typeof block.subClasses>);
+          let groupedEntries: [string, typeof block.subClasses][] = [];
+          
+          if (displayMode === 'subject') {
+            const grouped = displaySubClasses.reduce((acc, sub) => {
+              if (!acc[sub.subject]) acc[sub.subject] = [];
+              acc[sub.subject].push(sub);
+              return acc;
+            }, {} as Record<string, typeof block.subClasses>);
+            groupedEntries = Object.entries(grouped);
+          } else {
+            const grouped: Record<string, typeof block.subClasses> = {};
+            displaySubClasses.forEach(sub => {
+              const teachers = parseTeachers(sub.teacher);
+              if (teachers.length === 0) teachers.push('未設定');
+              teachers.forEach(t => {
+                if (!grouped[t]) grouped[t] = [];
+                grouped[t].push(sub);
+              });
+            });
+            groupedEntries = Object.entries(grouped);
+          }
 
           if (isChangeOnlyView) {
             return (
               <div className={`flex ${block.isBatch ? 'flex-col justify-center' : 'flex-row justify-center items-center'} gap-px md:gap-0.5 w-full flex-1 overflow-hidden`}>
-                {Object.entries(grouped).map(([mainText, subs]) => {
+                {groupedEntries.map(([mainText, subs]) => {
                   const locations = Array.from(new Set(subs.map(s => s.location).filter(Boolean)));
                   
                   let badges: string[] = [];
@@ -158,9 +173,9 @@ export function DraggableBlock({ block, onClick, duplicateTeachers = [], mergedC
                           {mainText}
                         </span>
                         {badges.length > 0 && (
-                          <div className="flex flex-row flex-wrap justify-center gap-1 mt-1.5 w-full px-1">
+                          <div className="flex flex-row flex-wrap justify-center gap-1 mt-1 w-full px-1">
                             {badges.map((name, idx) => (
-                              <span key={idx} className="px-1.5 py-0.5 rounded-sm text-[10px] md:text-[11px] font-black bg-amber-500 text-white shadow-sm tracking-wider whitespace-nowrap">
+                              <span key={idx} className={`px-1.5 py-0.5 rounded-sm text-[10px] md:text-[11px] font-black text-white shadow-sm tracking-wider whitespace-nowrap ${displayMode === 'teacher' ? 'bg-indigo-500' : 'bg-amber-500'}`}>
                                 {name}
                               </span>
                             ))}
@@ -186,7 +201,7 @@ export function DraggableBlock({ block, onClick, duplicateTeachers = [], mergedC
           // 通常表示（isChangeOnlyView === false）
           return (
             <div className={`flex ${block.isBatch ? 'flex-col justify-center' : 'flex-row justify-center items-center'} gap-px md:gap-0.5 w-full h-full`}>
-              {Object.entries(grouped).map(([mainText, subs]) => {
+              {groupedEntries.map(([mainText, subs]) => {
                 const locations = Array.from(new Set(subs.map(s => s.location).filter(Boolean)));
                 
                 let badges: string[] = [];
@@ -228,9 +243,9 @@ export function DraggableBlock({ block, onClick, duplicateTeachers = [], mergedC
                         {mainText}
                       </span>
                       {badges.length > 0 && (
-                        <div className="flex flex-row flex-wrap justify-center gap-1 mt-1.5 w-full px-1">
+                        <div className="flex flex-row flex-wrap justify-center gap-1 mt-1 w-full px-1 shrink-0">
                           {badges.map((name, idx) => (
-                            <span key={idx} className="px-1.5 py-0.5 rounded-sm text-[10px] md:text-[11px] font-black bg-amber-500 text-white shadow-sm tracking-wider whitespace-nowrap">
+                            <span key={idx} className={`px-1.5 py-0.5 rounded-sm text-[10px] md:text-[11px] font-black text-white shadow-sm tracking-wider whitespace-nowrap ${displayMode === 'teacher' ? 'bg-indigo-500' : 'bg-amber-500'}`}>
                               {name}
                             </span>
                           ))}
