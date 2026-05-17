@@ -121,8 +121,9 @@ export function DraggableBlock({ block, onClick, duplicateTeachers = [], mergedC
               const teachers = parseTeachers(sub.teacher);
               if (teachers.length === 0) teachers.push('未設定');
               teachers.forEach(t => {
-                if (!grouped[t]) grouped[t] = [];
-                grouped[t].push(sub);
+                const lastName = t.split(/[\s　]+/)[0];
+                if (!grouped[lastName]) grouped[lastName] = [];
+                grouped[lastName].push(sub);
               });
             });
             groupedEntries = Object.entries(grouped);
