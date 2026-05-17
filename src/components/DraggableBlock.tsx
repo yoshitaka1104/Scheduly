@@ -143,8 +143,6 @@ export function DraggableBlock({ block, onClick, duplicateTeachers = [], mergedC
                     badges = tasks.filter(taskSub => isDuplicatedSubject && taskSub.teacher).map(taskSub => {
                       return taskSub.teacher ? taskSub.teacher.split(/[,\s・、\n]/)[0] : '';
                     }).filter(Boolean);
-                  } else {
-                    badges = Array.from(new Set(subs.map(s => s.subject).filter(Boolean)));
                   }
 
                   let verticalFontSize = 'clamp(14px, 21cqh, 20px)';
@@ -213,8 +211,6 @@ export function DraggableBlock({ block, onClick, duplicateTeachers = [], mergedC
                   badges = tasks.filter(taskSub => isDuplicatedSubject && taskSub.teacher).map(taskSub => {
                     return taskSub.teacher ? taskSub.teacher.split(/[,\s・、\n]/)[0] : '';
                   }).filter(Boolean);
-                } else {
-                  badges = Array.from(new Set(subs.map(s => s.subject).filter(Boolean)));
                 }
 
                 let verticalFontSize = 'clamp(14px, 21cqh, 20px)';
