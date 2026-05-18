@@ -312,39 +312,9 @@ export function TimetableBoard({ isExporting = false }: { isExporting?: boolean 
 
             {/* Timetable Cells with 2D Merging */}
             {(() => {
+              // cells配列の作成を先に行い、視覚的に結合された単位で教員の重複を判定する
               const cells: { cls: ClassInfo, period: Period, w: number, h: number, block?: TimetableBlock, cIdx: number, pIdx: number, mergedClassIds?: string[], mergedPeriods?: number[] }[] = [];
               const visited = new Set<string>();
-
-              // Precalculate duplicate teachers for each period
-              const duplicateTeachersByPeriod = new Map<number, string[]>();
-              activePeriods.forEach(p => {
-                const blocksInPeriod = blocksForToday.filter(b => b.period === p);
-                const teacherSubClasses = new Map<string, Array<{sub: SubClass, block: TimetableBlock}>>();
-                blocksInPeriod.forEach(b => {
-                  b.subClasses?.forEach(sub => {
-                    const teachers = parseTeachers(sub.teacher);
-                    teachers.forEach(t => {
-                      if (t) {
-                        if (!teacherSubClasses.has(t)) teacherSubClasses.set(t, []);
-                        teacherSubClasses.get(t)!.push({sub, block: b});
-                      }
-                    });
-                  });
-                });
-                const duplicates = Array.from(teacherSubClasses.entries())
-                  .filter(([_, items]) => {
-                    if (items.length <= 1) return false;
-                    const hasNonElective = items.some(item => {
-                      const isExplicitlyElective = item.sub.isElective;
-                      const isImplicitlyElective = item.block.subClasses && item.block.subClasses.length > 1;
-                      return !isExplicitlyElective && !isImplicitlyElective;
-                    });
-                    if (hasNonElective) return true;
-                    return false;
-                  })
-                  .map(([teacher]) => teacher);
-                duplicateTeachersByPeriod.set(p, duplicates);
-              });
 
               for (let pIdx = 0; pIdx < activePeriods.length; pIdx++) {
                 for (let cIdx = 0; cIdx < filteredClasses.length; cIdx++) {
@@ -454,6 +424,31 @@ export function TimetableBoard({ isExporting = false }: { isExporting?: boolean 
                   cells.push({ cls, period, w, h, block: blockToRender, cIdx, pIdx, mergedClassIds: currentMergedClassIds, mergedPeriods: currentMergedPeriods });
                 }
               }
+
+              // セル（視覚的に結合済みのブロック）をベースに重複教員を判定
+              const duplicateTeachersByPeriod = new Map<number, string[]>();
+              activePeriods.forEach(p => {
+                const overlappingCells = cells.filter(c => c.block !== undefined && c.mergedPeriods?.includes(p));
+                const teacherCellCount = new Map<string, number>();
+                
+                overlappingCells.forEach(cell => {
+                  const uniqueTeachersInCell = new Set<string>();
+                  cell.block?.subClasses?.forEach(sub => {
+                    const teachers = parseTeachers(sub.teacher);
+                    teachers.forEach(t => {
+                      if (t) uniqueTeachersInCell.add(t);
+                    });
+                  });
+                  uniqueTeachersInCell.forEach(t => {
+                    teacherCellCount.set(t, (teacherCellCount.get(t) || 0) + 1);
+                  });
+                });
+
+                const duplicates = Array.from(teacherCellCount.entries())
+                  .filter(([_, count]) => count > 1)
+                  .map(([teacher]) => teacher);
+                duplicateTeachersByPeriod.set(p, duplicates);
+              });
 
               return cells.map(cell => {
                 const { cls, period, w, h, block, cIdx, mergedClassIds, mergedPeriods } = cell;
