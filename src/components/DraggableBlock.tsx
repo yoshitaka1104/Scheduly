@@ -172,7 +172,10 @@ export function DraggableBlock({ block, onClick, duplicateTeachers = [], mergedC
                           {mainText}
                         </span>
                         {badges.length > 0 && (
-                          <div className="flex flex-row flex-wrap justify-center gap-1 mt-1 w-full px-1">
+                          <div 
+                            className="flex justify-center mt-1 w-full px-1"
+                            style={{ display: 'flex', flexDirection: 'row', flexWrap: 'wrap', gap: '4px', justifyContent: 'center' }}
+                          >
                             {badges.map((name, idx) => (
                               <span key={idx} className={`px-1.5 py-0.5 rounded-sm text-[10px] md:text-[11px] font-black text-white shadow-sm tracking-wider whitespace-nowrap ${displayMode === 'teacher' ? 'bg-indigo-500' : 'bg-amber-500'}`}>
                                 {name}
@@ -240,7 +243,10 @@ export function DraggableBlock({ block, onClick, duplicateTeachers = [], mergedC
                         {mainText}
                       </span>
                       {badges.length > 0 && (
-                        <div className="flex flex-row flex-wrap justify-center gap-1 mt-1 w-full px-1 shrink-0">
+                        <div 
+                          className="flex mt-1 w-full px-1 shrink-0"
+                          style={{ display: 'flex', flexDirection: 'row', flexWrap: 'wrap', gap: '4px', justifyContent: 'center' }}
+                        >
                           {badges.map((name, idx) => (
                             <span key={idx} className={`px-1.5 py-0.5 rounded-sm text-[10px] md:text-[11px] font-black text-white shadow-sm tracking-wider whitespace-nowrap ${displayMode === 'teacher' ? 'bg-indigo-500' : 'bg-amber-500'}`}>
                               {name}
