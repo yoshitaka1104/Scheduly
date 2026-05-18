@@ -1,7 +1,7 @@
 import { useState, useMemo } from 'react';
 import { useTimetableStore } from '../store/useTimetableStore';
 import { format } from 'date-fns';
-import { Period, TimetableBlock, SubClass, ClassInfo } from '../types';
+import { Period, TimetableBlock, ClassInfo } from '../types';
 import { 
   DndContext, 
   DragEndEvent, 
