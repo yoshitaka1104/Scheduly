@@ -429,23 +429,31 @@ export function TimetableBoard({ isExporting = false }: { isExporting?: boolean 
               const duplicateTeachersByPeriod = new Map<number, string[]>();
               activePeriods.forEach(p => {
                 const overlappingCells = cells.filter(c => c.block !== undefined && c.mergedPeriods?.includes(p));
-                const teacherCellCount = new Map<string, number>();
+                const teacherActiveClasses = new Map<string, Set<string>>(); // 教員名 -> 担当しているユニークな授業キーのセット
                 
                 overlappingCells.forEach(cell => {
-                  const uniqueTeachersInCell = new Set<string>();
                   cell.block?.subClasses?.forEach(sub => {
                     const teachers = parseTeachers(sub.teacher);
                     teachers.forEach(t => {
-                      if (t) uniqueTeachersInCell.add(t);
+                      if (!t) return;
+                      if (!teacherActiveClasses.has(t)) {
+                        teacherActiveClasses.set(t, new Set<string>());
+                      }
+                      
+                      // 選択科目（合同授業）の場合は、科目名が同じであれば同じ授業とみなす
+                      // 通常授業の場合は、セルごとに異なる授業（同時並行不可）とみなすため、セルID等のキーを含める
+                      const isElective = sub.isElective;
+                      const lessonKey = isElective 
+                        ? `elective-${sub.subject}` 
+                        : `normal-${cell.cls.id}-${sub.subject}`;
+                        
+                      teacherActiveClasses.get(t)!.add(lessonKey);
                     });
-                  });
-                  uniqueTeachersInCell.forEach(t => {
-                    teacherCellCount.set(t, (teacherCellCount.get(t) || 0) + 1);
                   });
                 });
 
-                const duplicates = Array.from(teacherCellCount.entries())
-                  .filter(([_, count]) => count > 1)
+                const duplicates = Array.from(teacherActiveClasses.entries())
+                  .filter(([_, activeLessons]) => activeLessons.size > 1)
                   .map(([teacher]) => teacher);
                 duplicateTeachersByPeriod.set(p, duplicates);
               });
