@@ -18,6 +18,7 @@ interface TimetableState {
   setVisibleGrades: (grades: number[]) => void;
   updateBlock: (id: string, partial: Partial<TimetableBlock>) => void;
   updateBlocks: (ids: string[], partial: Partial<TimetableBlock>) => void;
+  deleteBlock: (id: string) => void;
   moveBlock: (id: string, targetClassId: string, targetPeriod: Period) => void;
   swapBlocks: (id1: string, id2: string) => void;
   swapMergedBlocks: (date: string, sourceCells: { classId: string, period: Period }[], periodOffset: number) => void;
@@ -166,14 +167,15 @@ export const useTimetableStore = create<TimetableState>()(
         };
       }),
 
-      updateBlocks: (ids, partial) => set((state) => {
-        const idSet = new Set(ids);
-        const newBlocks = state.blocks.map(b => idSet.has(b.id) ? { ...b, ...partial } : b);
-        return {
-          pastBlocks: [...state.pastBlocks.slice(-19), state.blocks],
-          blocks: newBlocks
-        };
-      }),
+      updateBlocks: (ids, partial) => set((state) => ({
+        pastBlocks: [...state.pastBlocks.slice(-19), state.blocks],
+        blocks: state.blocks.map(b => ids.includes(b.id) ? { ...b, ...partial } : b)
+      })),
+      
+      deleteBlock: (id) => set((state) => ({
+        pastBlocks: [...state.pastBlocks.slice(-19), state.blocks],
+        blocks: state.blocks.filter(b => b.id !== id)
+      })),
 
       moveBlock: (id, targetClassId, targetPeriod) => set((state) => {
         const newBlocks = state.blocks.map(b => {

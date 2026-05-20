@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { useTimetableStore } from '../store/useTimetableStore';
-import { X, BookOpen, User, Save, MapPin } from 'lucide-react';
+import { X, BookOpen, User, Save, MapPin, Trash2 } from 'lucide-react';
 import { TimetableBlock } from '../types';
 
 interface Props {
@@ -9,7 +9,7 @@ interface Props {
 }
 
 export function BlockDetailsModal({ activeItem, onClose }: Props) {
-  const { updateBlocks, classes, addLog, blocks } = useTimetableStore();
+  const { updateBlocks, deleteBlock, classes, addLog, blocks } = useTimetableStore();
   const block = activeItem?.block || null;
   const [editedSubClasses, setEditedSubClasses] = useState<TimetableBlock['subClasses']>([]);
   const [selectedClassIds, setSelectedClassIds] = useState<string[]>([]);
@@ -124,6 +124,23 @@ export function BlockDetailsModal({ activeItem, onClose }: Props) {
       const subjectsStr = editedSubClasses.map(s => s.subject).join(' / ');
       addLog({ targetDate: block.date, action: 'update_memo', details: `${targetClass?.grade}年${targetClass?.name} ${block.period}限 (${subjectsStr}) の詳細を更新しました` });
     }
+    onClose();
+  };
+
+  const handleDelete = () => {
+    if (!block || !activeItem) return;
+    
+    const targetIds = blocks
+      .filter(b => 
+        b.date === block.date && 
+        selectedClassIds.includes(b.classId) && 
+        activeItem.mergedPeriods.includes(b.period)
+      )
+      .map(b => b.id);
+      
+    targetIds.forEach(id => deleteBlock(id));
+    const subjectsStr = editedSubClasses.map(s => s.subject).join(' / ') || '授業';
+    addLog({ targetDate: block.date, action: 'delete', details: `${targetClass?.grade}年${targetClass?.name} ${block.period}限 (${subjectsStr}) を削除しました` });
     onClose();
   };
 
@@ -296,10 +313,17 @@ export function BlockDetailsModal({ activeItem, onClose }: Props) {
           </div>
         </div>
         
-        <div className="p-4 border-t border-slate-100 bg-white flex-shrink-0">
+        <div className="p-4 border-t border-slate-100 bg-white flex-shrink-0 flex gap-3">
+          <button 
+            onClick={handleDelete}
+            className="w-1/3 flex justify-center items-center gap-2 bg-red-50 hover:bg-red-100 text-red-600 border border-red-200 py-3.5 rounded-xl font-bold transition-colors shadow-sm"
+          >
+            <Trash2 className="h-5 w-5" />
+            削除
+          </button>
           <button 
             onClick={handleSave}
-            className="w-full flex justify-center items-center gap-2 bg-slate-800 hover:bg-slate-900 text-white py-3.5 rounded-xl font-bold transition-colors shadow-sm"
+            className="w-2/3 flex justify-center items-center gap-2 bg-slate-800 hover:bg-slate-900 text-white py-3.5 rounded-xl font-bold transition-colors shadow-sm"
           >
             <Save className="h-5 w-5" />
             保存して閉じる
