@@ -429,7 +429,8 @@ export function TimetableBoard({ isExporting = false }: { isExporting?: boolean 
               const duplicateTeachersByPeriod = new Map<number, string[]>();
               activePeriods.forEach(p => {
                 const overlappingCells = cells.filter(c => c.block !== undefined && c.mergedPeriods?.includes(p));
-                const teacherActiveClasses = new Map<string, Set<string>>(); // 教員名 -> 担当しているユニークな授業キーのセット
+                // 教員名 -> 担当している授業情報のリスト
+                const teacherActiveClasses = new Map<string, Array<{ isElective: boolean, subject: string, key: string }>>();
                 
                 overlappingCells.forEach(cell => {
                   cell.block?.subClasses?.forEach(sub => {
@@ -437,23 +438,41 @@ export function TimetableBoard({ isExporting = false }: { isExporting?: boolean 
                     teachers.forEach(t => {
                       if (!t) return;
                       if (!teacherActiveClasses.has(t)) {
-                        teacherActiveClasses.set(t, new Set<string>());
+                        teacherActiveClasses.set(t, []);
                       }
                       
-                      // 選択科目（合同授業）の場合は、科目名が同じであれば同じ授業とみなす
-                      // 通常授業の場合は、セルごとに異なる授業（同時並行不可）とみなすため、セルID等のキーを含める
-                      const isElective = sub.isElective;
-                      const lessonKey = isElective 
-                        ? `elective-${sub.subject}` 
-                        : `normal-${cell.cls.id}-${sub.subject}`;
+                      const activeLessons = teacherActiveClasses.get(t)!;
+                      const isElective = !!sub.isElective;
+                      
+                      if (isElective) {
+                        // 選択科目（合同授業）の場合：すでに登録されている選択科目の中で、
+                        // 科目名が部分一致（一方が他方を含む。例：「数学Ⅱ」と「数学Ⅱα」）する授業があれば同じ授業とみなす
+                        const hasSameElective = activeLessons.some(l => 
+                          l.isElective && 
+                          (l.subject.includes(sub.subject) || sub.subject.includes(l.subject))
+                        );
                         
-                      teacherActiveClasses.get(t)!.add(lessonKey);
+                        if (!hasSameElective) {
+                          activeLessons.push({
+                            isElective: true,
+                            subject: sub.subject,
+                            key: `elective-${sub.subject}`
+                          });
+                        }
+                      } else {
+                        // 通常授業の場合：セルごとに異なる授業（同時並行不可）とみなす
+                        activeLessons.push({
+                          isElective: false,
+                          subject: sub.subject,
+                          key: `normal-${cell.cls.id}-${sub.subject}`
+                        });
+                      }
                     });
                   });
                 });
 
                 const duplicates = Array.from(teacherActiveClasses.entries())
-                  .filter(([_, activeLessons]) => activeLessons.size > 1)
+                  .filter(([_, activeLessons]) => activeLessons.length > 1)
                   .map(([teacher]) => teacher);
                 duplicateTeachersByPeriod.set(p, duplicates);
               });
