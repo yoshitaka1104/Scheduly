@@ -445,11 +445,21 @@ export function TimetableBoard({ isExporting = false }: { isExporting?: boolean 
                       const isElective = !!sub.isElective;
                       
                       if (isElective) {
-                        // 選択科目（合同授業）の場合：すでに登録されている選択科目の中で、
-                        // 科目名が部分一致（一方が他方を含む。例：「数学Ⅱ」と「数学Ⅱα」）する授業があれば同じ授業とみなす
+                        // 特例ルール：「SKⅡβ」と「数研Ⅱ」は科目名が全く異なるが、同一の合同授業とする
+                        const isSpecialJoint = (s1: string, s2: string) => {
+                          const names = [s1, s2];
+                          return names.includes('SKⅡβ') && names.includes('数研Ⅱ');
+                        };
+
+                        // 選択科目（合同授業）の場合：すでに登録されている選択科目の中に、
+                        // 科目名が部分一致する授業、または特例ルールに合致する授業があれば同じ授業とみなす
                         const hasSameElective = activeLessons.some(l => 
                           l.isElective && 
-                          (l.subject.includes(sub.subject) || sub.subject.includes(l.subject))
+                          (
+                            l.subject.includes(sub.subject) || 
+                            sub.subject.includes(l.subject) ||
+                            isSpecialJoint(l.subject, sub.subject)
+                          )
                         );
                         
                         if (!hasSameElective) {
