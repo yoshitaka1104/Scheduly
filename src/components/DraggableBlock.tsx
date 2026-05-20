@@ -166,7 +166,7 @@ export function DraggableBlock({ block, onClick, duplicateTeachers = [], duplica
                     const { last, first } = getTeacherDisplayParts(mainText);
                     displayNode = first ? (
                       <>
-                        {last} <span style={{ fontSize: '0.7em' }}>{first}</span>
+                        {last}<span style={{ fontSize: '0.7em', marginInlineStart: '-0.15em' }}>{first}</span>
                       </>
                     ) : (
                       last
@@ -203,7 +203,7 @@ export function DraggableBlock({ block, onClick, duplicateTeachers = [], duplica
                               const { last, first } = getTeacherDisplayParts(name);
                               return (
                                 <span key={idx} className={`px-1.5 py-0.5 rounded-sm text-[10px] md:text-[11px] font-black text-white shadow-sm tracking-wider whitespace-nowrap ${displayMode === 'teacher' ? 'bg-indigo-500' : 'bg-amber-500'}`}>
-                                  {last}{first && <> <span style={{ fontSize: '0.7em' }}>{first}</span></>}
+                                  {last}{first && <span style={{ fontSize: '0.7em', marginInlineStart: '-0.15em' }}>{first}</span>}
                                 </span>
                               );
                             })}
@@ -252,7 +252,7 @@ export function DraggableBlock({ block, onClick, duplicateTeachers = [], duplica
                   const { last, first } = getTeacherDisplayParts(mainText);
                   displayNode = first ? (
                     <>
-                      {last} <span style={{ fontSize: '0.7em' }}>{first}</span>
+                      {last}<span style={{ fontSize: '0.7em', marginInlineStart: '-0.15em' }}>{first}</span>
                     </>
                   ) : (
                     last
@@ -289,7 +289,7 @@ export function DraggableBlock({ block, onClick, duplicateTeachers = [], duplica
                             const { last, first } = getTeacherDisplayParts(name);
                             return (
                               <span key={idx} className={`px-1.5 py-0.5 rounded-sm text-[10px] md:text-[11px] font-black text-white shadow-sm tracking-wider whitespace-nowrap ${displayMode === 'teacher' ? 'bg-indigo-500' : 'bg-amber-500'}`}>
-                                {last}{first && <> <span style={{ fontSize: '0.7em' }}>{first}</span></>}
+                                {last}{first && <span style={{ fontSize: '0.7em', marginInlineStart: '-0.15em' }}>{first}</span>}
                               </span>
                             );
                           })}
