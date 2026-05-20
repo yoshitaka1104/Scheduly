@@ -8,12 +8,13 @@ interface Props {
   block: TimetableBlock;
   onClick: (e: React.MouseEvent) => void;
   duplicateTeachers?: string[];
+  duplicateLastNames?: string[];
   mergedClassIds?: string[];
   mergedPeriods?: number[];
   isChangeOnlyView?: boolean;
 }
 
-export function DraggableBlock({ block, onClick, duplicateTeachers = [], mergedClassIds = [], mergedPeriods = [], isChangeOnlyView = false }: Props) {
+export function DraggableBlock({ block, onClick, duplicateTeachers = [], duplicateLastNames = [], mergedClassIds = [], mergedPeriods = [], isChangeOnlyView = false }: Props) {
   const { attributes, listeners, setNodeRef, transform, isDragging } = useDraggable({
     id: block.id,
     data: { block, mergedClassIds, mergedPeriods }
@@ -108,6 +109,17 @@ export function DraggableBlock({ block, onClick, duplicateTeachers = [], mergedC
         {(() => {
           let groupedEntries: [string, typeof block.subClasses][] = [];
           
+          const getTeacherDisplayParts = (fullName: string) => {
+            if (!fullName || fullName === '未設定') return { last: '未設定', first: '' };
+            const parts = fullName.trim().split(/[\s　]+/);
+            const lastName = parts[0];
+            
+            if (duplicateLastNames.includes(lastName) && parts.length > 1) {
+              return { last: lastName, first: parts[1].charAt(0) };
+            }
+            return { last: lastName, first: '' };
+          };
+
           if (displayMode === 'subject') {
             const grouped = displaySubClasses.reduce((acc, sub) => {
               if (!acc[sub.subject]) acc[sub.subject] = [];
@@ -121,9 +133,8 @@ export function DraggableBlock({ block, onClick, duplicateTeachers = [], mergedC
               const teachers = parseTeachers(sub.teacher);
               if (teachers.length === 0) teachers.push('未設定');
               teachers.forEach(t => {
-                const lastName = t.split(/[\s　]+/)[0];
-                if (!grouped[lastName]) grouped[lastName] = [];
-                grouped[lastName].push(sub);
+                if (!grouped[t]) grouped[t] = [];
+                grouped[t].push(sub);
               });
             });
             groupedEntries = Object.entries(grouped);
@@ -150,11 +161,23 @@ export function DraggableBlock({ block, onClick, duplicateTeachers = [], mergedC
                     verticalFontSize = (badges.length > 0 || locations.length > 0) ? 'clamp(11px, 15cqh, 14px)' : 'clamp(12px, 17cqh, 16px)';
                   }
 
+                  let displayNode: React.ReactNode = mainText;
+                  if (displayMode === 'teacher') {
+                    const { last, first } = getTeacherDisplayParts(mainText);
+                    displayNode = first ? (
+                      <>
+                        {last}<span style={{ fontSize: '0.85em', opacity: 0.9 }}>{first}</span>
+                      </>
+                    ) : (
+                      last
+                    );
+                  }
+
                   return (
                     <div key={mainText} className={`flex flex-col items-center justify-center h-full shrink-0 ${block.isBatch ? 'text-center w-full px-1' : ''}`}>
                       <div className={`flex ${block.isBatch ? 'flex-col items-center justify-center w-full h-full overflow-hidden' : 'flex-col items-center justify-center gap-0.5 h-full'}`}>
                         <span 
-                          className={`font-black text-slate-800 tracking-tight shrink-0 ${block.isBatch ? 'leading-none whitespace-nowrap overflow-hidden text-ellipsis' : 'leading-none text-center'}`}
+                          className={`font-black text-slate-800 tracking-tight shrink-0 ${block.isBatch ? 'flex items-baseline justify-center leading-none whitespace-nowrap overflow-hidden text-ellipsis' : 'leading-none text-center'}`}
                           style={block.isBatch 
                             ? { 
                                 fontSize: `min(calc(95cqw / ${Math.max(mainText.length, 1)}), 80px, 80cqh)`, 
@@ -169,18 +192,21 @@ export function DraggableBlock({ block, onClick, duplicateTeachers = [], mergedC
                               }
                           }
                         >
-                          {mainText}
+                          {displayNode}
                         </span>
                         {badges.length > 0 && (
                           <div 
                             className="flex justify-center mt-1 px-1"
                             style={{ display: 'flex', flexDirection: 'row', flexWrap: 'nowrap', gap: '4px', justifyContent: 'center' }}
                           >
-                            {badges.map((name, idx) => (
-                              <span key={idx} className={`px-1.5 py-0.5 rounded-sm text-[10px] md:text-[11px] font-black text-white shadow-sm tracking-wider whitespace-nowrap ${displayMode === 'teacher' ? 'bg-indigo-500' : 'bg-amber-500'}`}>
-                                {name}
-                              </span>
-                            ))}
+                            {badges.map((name, idx) => {
+                              const { last, first } = getTeacherDisplayParts(name);
+                              return (
+                                <span key={idx} className={`px-1.5 py-0.5 rounded-sm text-[10px] md:text-[11px] font-black text-white shadow-sm tracking-wider whitespace-nowrap ${displayMode === 'teacher' ? 'bg-indigo-500' : 'bg-amber-500'}`}>
+                                  {last}{first && <span style={{ fontSize: '0.85em', opacity: 0.9 }}>{first}</span>}
+                                </span>
+                              );
+                            })}
                           </div>
                         )}
                       </div>
@@ -221,37 +247,52 @@ export function DraggableBlock({ block, onClick, duplicateTeachers = [], mergedC
                   verticalFontSize = (badges.length > 0 || locations.length > 0) ? 'clamp(11px, 15cqh, 14px)' : 'clamp(12px, 17cqh, 16px)';
                 }
 
+                let displayNode: React.ReactNode = mainText;
+                if (displayMode === 'teacher') {
+                  const { last, first } = getTeacherDisplayParts(mainText);
+                  displayNode = first ? (
+                    <>
+                      {last}<span style={{ fontSize: '0.85em', opacity: 0.9 }}>{first}</span>
+                    </>
+                  ) : (
+                    last
+                  );
+                }
+
                 return (
                   <div key={mainText} className={`flex flex-col items-center justify-center h-full shrink-0 ${block.isBatch ? 'text-center w-full px-1' : ''}`}>
                     <div className={`flex ${block.isBatch ? 'flex-col items-center justify-center w-full h-full overflow-hidden' : 'flex-col items-center justify-center gap-0.5 h-full'}`}>
-                      <span 
-                        className={`font-black text-slate-800 tracking-tight shrink-0 ${block.isBatch ? 'leading-none whitespace-nowrap overflow-hidden text-ellipsis' : 'leading-none text-center'}`}
-                        style={block.isBatch 
-                          ? { 
-                              fontSize: `min(calc(95cqw / ${Math.max(mainText.length, 1)}), 80px, 80cqh)`, 
-                              maxWidth: '100%',
-                            } 
-                          : { 
-                              writingMode: 'vertical-rl', 
-                              textOrientation: 'upright', 
-                              textAlign: 'center',
-                              maxHeight: '100%',
-                              fontSize: verticalFontSize
-                            }
-                        }
-                      >
-                        {mainText}
-                      </span>
+                        <span 
+                          className={`font-black text-slate-800 tracking-tight shrink-0 ${block.isBatch ? 'flex items-baseline justify-center leading-none whitespace-nowrap overflow-hidden text-ellipsis' : 'leading-none text-center'}`}
+                          style={block.isBatch 
+                            ? { 
+                                fontSize: `min(calc(95cqw / ${Math.max(mainText.length, 1)}), 80px, 80cqh)`, 
+                                maxWidth: '100%',
+                              } 
+                            : { 
+                                writingMode: 'vertical-rl', 
+                                textOrientation: 'upright', 
+                                textAlign: 'center',
+                                maxHeight: '100%',
+                                fontSize: verticalFontSize
+                              }
+                          }
+                        >
+                          {displayNode}
+                        </span>
                       {badges.length > 0 && (
                         <div 
                           className="flex mt-1 px-1 shrink-0"
                           style={{ display: 'flex', flexDirection: 'row', flexWrap: 'nowrap', gap: '4px', justifyContent: 'center' }}
                         >
-                          {badges.map((name, idx) => (
-                            <span key={idx} className={`px-1.5 py-0.5 rounded-sm text-[10px] md:text-[11px] font-black text-white shadow-sm tracking-wider whitespace-nowrap ${displayMode === 'teacher' ? 'bg-indigo-500' : 'bg-amber-500'}`}>
-                              {name}
-                            </span>
-                          ))}
+                          {badges.map((name, idx) => {
+                            const { last, first } = getTeacherDisplayParts(name);
+                            return (
+                              <span key={idx} className={`px-1.5 py-0.5 rounded-sm text-[10px] md:text-[11px] font-black text-white shadow-sm tracking-wider whitespace-nowrap ${displayMode === 'teacher' ? 'bg-indigo-500' : 'bg-amber-500'}`}>
+                                {last}{first && <span style={{ fontSize: '0.85em', opacity: 0.9 }}>{first}</span>}
+                              </span>
+                            );
+                          })}
                         </div>
                       )}
                     </div>

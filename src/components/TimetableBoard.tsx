@@ -138,6 +138,33 @@ export function TimetableBoard({ isExporting = false }: { isExporting?: boolean 
 
   const blocksForToday = useMemo(() => blocks.filter(b => b.date === dateStr), [blocks, dateStr]);
 
+  // 重複する姓を持つ教員のリスト（例：佐藤 一郎と佐藤 次郎がいる場合、「佐藤」が抽出される）
+  const duplicateLastNames = useMemo(() => {
+    const allT = new Set<string>();
+    blocks.forEach(b => {
+      b.subClasses?.forEach(s => {
+        parseTeachers(s.teacher).forEach(t => {
+          if (t) allT.add(t);
+        });
+      });
+    });
+    
+    const lastNameCount = new Map<string, Set<string>>();
+    allT.forEach(fullName => {
+      const lastName = fullName.split(/[\s　]+/)[0];
+      if (!lastNameCount.has(lastName)) lastNameCount.set(lastName, new Set());
+      lastNameCount.get(lastName)!.add(fullName);
+    });
+
+    const duplicates: string[] = [];
+    lastNameCount.forEach((fullNames, lastName) => {
+      if (fullNames.size > 1) {
+        duplicates.push(lastName);
+      }
+    });
+    return duplicates;
+  }, [blocks]);
+
   const getBlock = (classId: string, period: Period) => {
     return blocksForToday.find(b => b.classId === classId && b.period === period);
   };
@@ -528,6 +555,7 @@ export function TimetableBoard({ isExporting = false }: { isExporting?: boolean 
                           block={block} 
                           onClick={() => setActiveDetailsBlock({ block, mergedClassIds: mergedClassIds || [cls.id], mergedPeriods: mergedPeriods || [period] })}
                           duplicateTeachers={duplicateTeachers}
+                          duplicateLastNames={duplicateLastNames}
                           mergedClassIds={mergedClassIds}
                           mergedPeriods={mergedPeriods}
                           isChangeOnlyView={isChangeOnlyView}
