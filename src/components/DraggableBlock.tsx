@@ -131,7 +131,13 @@ export function DraggableBlock({ block, onClick, duplicateTeachers = [], duplica
             const grouped: Record<string, typeof block.subClasses> = {};
             displaySubClasses.forEach(sub => {
               const teachers = parseTeachers(sub.teacher);
-              if (teachers.length === 0) teachers.push('未設定');
+              if (teachers.length === 0) {
+                if (block.isBatch && sub.subject) {
+                  teachers.push(sub.subject);
+                } else {
+                  teachers.push('未設定');
+                }
+              }
               teachers.forEach(t => {
                 if (!grouped[t]) grouped[t] = [];
                 grouped[t].push(sub);
@@ -162,7 +168,7 @@ export function DraggableBlock({ block, onClick, duplicateTeachers = [], duplica
                   }
 
                   let displayNode: React.ReactNode = mainText;
-                  if (displayMode === 'teacher') {
+                  if (displayMode === 'teacher' && !block.isBatch) {
                     const { last, first } = getTeacherDisplayParts(mainText);
                     displayNode = first ? (
                       <>
@@ -248,7 +254,7 @@ export function DraggableBlock({ block, onClick, duplicateTeachers = [], duplica
                 }
 
                 let displayNode: React.ReactNode = mainText;
-                if (displayMode === 'teacher') {
+                if (displayMode === 'teacher' && !block.isBatch) {
                   const { last, first } = getTeacherDisplayParts(mainText);
                   displayNode = first ? (
                     <>
