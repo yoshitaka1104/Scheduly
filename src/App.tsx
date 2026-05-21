@@ -64,7 +64,8 @@ function App() {
       });
       const link = document.createElement('a');
       const suffix = changeOnly ? '_変更のみ' : '';
-      link.download = `時間割_${format(currentDate, 'yyyyMMdd')}${suffix}.png`;
+      const modeSuffix = displayMode === 'subject' ? '_科目' : '_教員';
+      link.download = `時間割_${format(currentDate, 'yyyyMMdd')}${modeSuffix}${suffix}.png`;
       link.href = url;
       link.click();
     } catch (err) {
