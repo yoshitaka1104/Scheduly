@@ -15,9 +15,13 @@ interface Props {
 }
 
 export function DraggableBlock({ block, onClick, duplicateTeachers = [], duplicateLastNames = [], mergedClassIds = [], mergedPeriods = [], isChangeOnlyView = false }: Props) {
+  const user = useTimetableStore(state => state.user);
+  const isLoggedIn = !!user;
+
   const { attributes, listeners, setNodeRef, transform, isDragging } = useDraggable({
     id: block.id,
-    data: { block, mergedClassIds, mergedPeriods }
+    data: { block, mergedClassIds, mergedPeriods },
+    disabled: !isLoggedIn
   });
 
   const displayMode = useTimetableStore(state => state.displayMode);
@@ -100,7 +104,9 @@ export function DraggableBlock({ block, onClick, duplicateTeachers = [], duplica
         e.stopPropagation();
         onClick(e);
       }}
-      className={`absolute inset-0 p-0.5 pl-[7px] md:p-1 md:pl-[10px] rounded-lg border overflow-hidden transition-all cursor-grab active:cursor-grabbing flex flex-col justify-between hover:shadow-sm ${bg} ${finalBorder} ${isDragging ? 'shadow-xl scale-105 rotate-2 z-10' : ''}`}
+      className={`absolute inset-0 p-0.5 pl-[7px] md:p-1 md:pl-[10px] rounded-lg border overflow-hidden transition-all flex flex-col justify-between hover:shadow-sm ${bg} ${finalBorder} ${
+        isLoggedIn ? 'cursor-grab active:cursor-grabbing' : 'cursor-pointer'
+      } ${isDragging ? 'shadow-xl scale-105 rotate-2 z-10' : ''}`}
     >
       {/* 多色対応の左側ライン */}
       <div className={`absolute left-0 top-0 bottom-0 w-[3px] md:w-[4px] ${leftLine}`} />

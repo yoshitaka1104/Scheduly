@@ -58,7 +58,8 @@ const isMergeable = (b1: TimetableBlock | undefined, b2: TimetableBlock | undefi
 };
 
 export function TimetableBoard({ isExporting = false }: { isExporting?: boolean }) {
-  const { blocks, classes, currentDate, settings, swapBlocks, moveBlock, swapMergedBlocks, addLog, visibleGrades, isChangeOnlyView } = useTimetableStore();
+  const { blocks, classes, currentDate, settings, swapBlocks, moveBlock, swapMergedBlocks, addLog, visibleGrades, isChangeOnlyView, user } = useTimetableStore();
+  const isLoggedIn = !!user;
   const dateStr = format(currentDate, 'yyyy-MM-dd');
   
   const filteredClasses = classes.filter(cls => visibleGrades.includes(cls.grade));
@@ -170,6 +171,7 @@ export function TimetableBoard({ isExporting = false }: { isExporting?: boolean 
   };
 
   const handleDragEnd = (event: DragEndEvent) => {
+    if (!isLoggedIn) return;
     const { active, over } = event;
     if (!over) return;
 
@@ -532,6 +534,7 @@ export function TimetableBoard({ isExporting = false }: { isExporting?: boolean 
                     <DroppableCell 
                       id={cellId} 
                       onClick={() => {
+                        if (!isLoggedIn) return;
                         if (!block && !isChangeOnlyView) {
                           const newBlock: TimetableBlock = {
                             id: `b-${dateStr}-${cls.id}-${period}-${crypto.randomUUID ? crypto.randomUUID() : Math.random().toString(36).substring(2)}`,

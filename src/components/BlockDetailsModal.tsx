@@ -9,10 +9,12 @@ interface Props {
 }
 
 export function BlockDetailsModal({ activeItem, onClose }: Props) {
-  const { updateBlocks, deleteBlock, classes, addLog, blocks } = useTimetableStore();
+  const { updateBlocks, deleteBlock, classes, addLog, blocks, user } = useTimetableStore();
   const block = activeItem?.block || null;
   const [editedSubClasses, setEditedSubClasses] = useState<TimetableBlock['subClasses']>([]);
   const [selectedClassIds, setSelectedClassIds] = useState<string[]>([]);
+
+  const isLoggedIn = !!user;
 
   useEffect(() => {
     if (activeItem) {
@@ -56,6 +58,7 @@ export function BlockDetailsModal({ activeItem, onClose }: Props) {
   const targetClass = classes.find(c => c.id === block.classId);
 
   const handleSubClassChange = (id: string, field: keyof TimetableBlock['subClasses'][0], value: any) => {
+    if (!isLoggedIn) return;
     setEditedSubClasses(prev => prev.map(s => {
       if (s.id === id) {
         const updated = { ...s, [field]: value };
@@ -73,6 +76,7 @@ export function BlockDetailsModal({ activeItem, onClose }: Props) {
   };
 
   const handleAddSubClass = () => {
+    if (!isLoggedIn) return;
     setEditedSubClasses(prev => [
       ...prev,
       {
@@ -87,10 +91,12 @@ export function BlockDetailsModal({ activeItem, onClose }: Props) {
   };
 
   const handleRemoveSubClass = (id: string) => {
+    if (!isLoggedIn) return;
     setEditedSubClasses(prev => prev.filter(s => s.id !== id));
   };
 
   const handleSave = () => {
+    if (!isLoggedIn) return;
     const isChanged = JSON.stringify(block.subClasses) !== JSON.stringify(editedSubClasses);
     if (isChanged) {
       const isBaseModified = editedSubClasses.some((s, i) => 
@@ -128,6 +134,7 @@ export function BlockDetailsModal({ activeItem, onClose }: Props) {
   };
 
   const handleDelete = () => {
+    if (!isLoggedIn) return;
     if (!block || !activeItem) return;
     
     const targetIds = blocks
@@ -160,15 +167,26 @@ export function BlockDetailsModal({ activeItem, onClose }: Props) {
         </div>
         
         <div className="p-4 border-b border-slate-100 bg-white">
-          <p className="text-xs font-bold text-slate-500 mb-2">対象クラス（合同授業にする場合は複数チェック）</p>
+          <p className="text-xs font-bold text-slate-500 mb-2">
+            対象クラス {!isLoggedIn && '（閲覧モード）'}
+          </p>
           <div className="flex flex-wrap gap-2">
             {classes.filter(c => c.grade === targetClass?.grade).map(c => (
-              <label key={c.id} className={`flex items-center gap-1.5 px-3 py-1.5 rounded-md border text-sm font-bold cursor-pointer transition-colors ${selectedClassIds.includes(c.id) ? 'bg-indigo-50 border-indigo-200 text-indigo-700' : 'bg-slate-50 border-slate-200 text-slate-600 hover:bg-slate-100'}`}>
+              <label 
+                key={c.id} 
+                className={`flex items-center gap-1.5 px-3 py-1.5 rounded-md border text-sm font-bold transition-colors ${
+                  selectedClassIds.includes(c.id) 
+                    ? 'bg-indigo-50 border-indigo-200 text-indigo-700' 
+                    : 'bg-slate-50 border-slate-200 text-slate-600 hover:bg-slate-100'
+                } ${!isLoggedIn ? 'opacity-75 cursor-default' : 'cursor-pointer'}`}
+              >
                 <input 
                   type="checkbox" 
                   className="hidden"
+                  disabled={!isLoggedIn}
                   checked={selectedClassIds.includes(c.id)}
                   onChange={(e) => {
+                    if (!isLoggedIn) return;
                     if (e.target.checked) {
                       setSelectedClassIds(prev => [...prev, c.id]);
                     } else {
@@ -195,7 +213,7 @@ export function BlockDetailsModal({ activeItem, onClose }: Props) {
                     <div className="w-1.5 h-5 bg-indigo-500 rounded-full" />
                     {sub.subject || '科目未定'} <span className="text-sm font-normal text-slate-400">の設定</span>
                   </h3>
-                  {editedSubClasses.length > 1 && (
+                  {isLoggedIn && editedSubClasses.length > 1 && (
                     <button 
                       onClick={() => handleRemoveSubClass(sub.id)}
                       className="text-red-500 hover:text-red-700 bg-white pl-3 text-sm font-bold flex items-center gap-1 transition-colors"
@@ -212,11 +230,12 @@ export function BlockDetailsModal({ activeItem, onClose }: Props) {
                       <User className="h-6 w-6" />
                     </div>
                     <div className="flex-1">
-                      <p className="text-xs font-bold text-slate-400 mb-1.5">担当教員を変更</p>
+                      <p className="text-xs font-bold text-slate-400 mb-1.5">担当教員</p>
                       <select 
                         value={sub.teacher}
+                        disabled={!isLoggedIn}
                         onChange={e => handleSubClassChange(sub.id, 'teacher', e.target.value)}
-                        className="w-full rounded-lg border-slate-300 border p-2.5 focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 outline-none text-slate-800 font-bold bg-white"
+                        className="w-full rounded-lg border-slate-300 border p-2.5 focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 outline-none text-slate-800 font-bold bg-white disabled:opacity-75"
                       >
                         {classTeachers.length > 0 && (
                           <optgroup label={`${targetClass?.grade}年${targetClass?.name} の担当教員`}>
@@ -241,11 +260,12 @@ export function BlockDetailsModal({ activeItem, onClose }: Props) {
                       <BookOpen className="h-6 w-6" />
                     </div>
                     <div className="flex-1">
-                      <p className="text-xs font-bold text-slate-400 mb-1.5">科目を変更</p>
+                      <p className="text-xs font-bold text-slate-400 mb-1.5">科目</p>
                       <select 
                         value={sub.subject}
+                        disabled={!isLoggedIn}
                         onChange={e => handleSubClassChange(sub.id, 'subject', e.target.value)}
-                        className="w-full rounded-lg border-slate-300 border p-2.5 focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 outline-none text-slate-800 font-extrabold bg-white"
+                        className="w-full rounded-lg border-slate-300 border p-2.5 focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 outline-none text-slate-800 font-extrabold bg-white disabled:opacity-75"
                       >
                         {availableSubjects.map(s => (
                           <option key={s} value={s}>{s}</option>
@@ -263,35 +283,48 @@ export function BlockDetailsModal({ activeItem, onClose }: Props) {
                       <input 
                         type="text"
                         value={sub.location || ''}
+                        disabled={!isLoggedIn}
                         onChange={e => handleSubClassChange(sub.id, 'location', e.target.value)}
-                        placeholder="例：第1体育館、物理室"
-                        className="w-full rounded-lg border-slate-300 border p-2 focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 outline-none text-slate-800 font-bold"
+                        placeholder={isLoggedIn ? "例：第1体育館、物理室" : "未設定"}
+                        className="w-full rounded-lg border-slate-300 border p-2 focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 outline-none text-slate-800 font-bold disabled:opacity-75 disabled:bg-slate-50"
                       />
                     </div>
                   </div>
 
-                  <div className="flex items-center gap-3 bg-amber-50 p-4 rounded-xl border border-amber-200 cursor-pointer hover:bg-amber-100 transition-colors" onClick={() => handleSubClassChange(sub.id, 'hasTask', !sub.hasTask)}>
+                  <div 
+                    className={`flex items-center gap-3 bg-amber-50 p-4 rounded-xl border border-amber-200 transition-colors ${
+                      isLoggedIn ? 'cursor-pointer hover:bg-amber-100' : 'cursor-default'
+                    }`} 
+                    onClick={() => isLoggedIn && handleSubClassChange(sub.id, 'hasTask', !sub.hasTask)}
+                  >
                     <input 
                       type="checkbox" 
                       checked={sub.hasTask || false}
+                      disabled={!isLoggedIn}
                       onChange={(e) => handleSubClassChange(sub.id, 'hasTask', e.target.checked)}
                       onClick={e => e.stopPropagation()}
-                      className="w-5 h-5 text-amber-600 rounded border-amber-300 focus:ring-amber-500 cursor-pointer"
+                      className="w-5 h-5 text-amber-600 rounded border-amber-300 focus:ring-amber-500 cursor-pointer disabled:cursor-default"
                     />
-                    <label className="font-bold text-amber-900 cursor-pointer select-none flex-1">
+                    <label className="font-bold text-amber-900 cursor-pointer disabled:cursor-default select-none flex-1">
                       この授業に自習課題を設定する
                     </label>
                   </div>
                   
-                  <div className="flex items-center gap-3 bg-slate-50 p-4 rounded-xl border border-slate-200 cursor-pointer hover:bg-slate-100 transition-colors" onClick={() => handleSubClassChange(sub.id, 'isElective', !sub.isElective)}>
+                  <div 
+                    className={`flex items-center gap-3 bg-slate-50 p-4 rounded-xl border border-slate-200 transition-colors ${
+                      isLoggedIn ? 'cursor-pointer hover:bg-slate-100' : 'cursor-default'
+                    }`} 
+                    onClick={() => isLoggedIn && handleSubClassChange(sub.id, 'isElective', !sub.isElective)}
+                  >
                     <input 
                       type="checkbox" 
                       checked={sub.isElective || false}
+                      disabled={!isLoggedIn}
                       onChange={(e) => handleSubClassChange(sub.id, 'isElective', e.target.checked)}
                       onClick={e => e.stopPropagation()}
-                      className="w-5 h-5 text-indigo-600 rounded border-slate-300 focus:ring-indigo-500 cursor-pointer"
+                      className="w-5 h-5 text-indigo-600 rounded border-slate-300 focus:ring-indigo-500 cursor-pointer disabled:cursor-default"
                     />
-                    <label className="font-bold text-slate-700 cursor-pointer select-none flex-1">
+                    <label className="font-bold text-slate-700 cursor-pointer disabled:cursor-default select-none flex-1">
                       この授業は選択科目（合同授業）である
                     </label>
                   </div>
@@ -300,34 +333,47 @@ export function BlockDetailsModal({ activeItem, onClose }: Props) {
             );
           })}
           
-          <div className="pt-2">
-            <button
-              onClick={handleAddSubClass}
-              className="w-full py-3 border-2 border-dashed border-indigo-200 text-indigo-600 rounded-xl font-bold hover:bg-indigo-50 transition-colors flex items-center justify-center gap-2"
-            >
-              <div className="bg-indigo-100 rounded-full p-1">
-                <User className="w-4 h-4" />
-              </div>
-              ＋ もう1名、担当教員を追加する
-            </button>
-          </div>
+          {isLoggedIn && (
+            <div className="pt-2">
+              <button
+                onClick={handleAddSubClass}
+                className="w-full py-3 border-2 border-dashed border-indigo-200 text-indigo-600 rounded-xl font-bold hover:bg-indigo-50 transition-colors flex items-center justify-center gap-2"
+              >
+                <div className="bg-indigo-100 rounded-full p-1">
+                  <User className="w-4 h-4" />
+                </div>
+                ＋ もう1名、担当教員を追加する
+              </button>
+            </div>
+          )}
         </div>
         
         <div className="p-4 border-t border-slate-100 bg-white flex-shrink-0 flex gap-3">
-          <button 
-            onClick={handleDelete}
-            className="w-1/3 flex justify-center items-center gap-2 bg-red-50 hover:bg-red-100 text-red-600 border border-red-200 py-3.5 rounded-xl font-bold transition-colors shadow-sm"
-          >
-            <Trash2 className="h-5 w-5" />
-            削除
-          </button>
-          <button 
-            onClick={handleSave}
-            className="w-2/3 flex justify-center items-center gap-2 bg-slate-800 hover:bg-slate-900 text-white py-3.5 rounded-xl font-bold transition-colors shadow-sm"
-          >
-            <Save className="h-5 w-5" />
-            保存して閉じる
-          </button>
+          {isLoggedIn ? (
+            <>
+              <button 
+                onClick={handleDelete}
+                className="w-1/3 flex justify-center items-center gap-2 bg-red-50 hover:bg-red-100 text-red-600 border border-red-200 py-3.5 rounded-xl font-bold transition-colors shadow-sm"
+              >
+                <Trash2 className="h-5 w-5" />
+                削除
+              </button>
+              <button 
+                onClick={handleSave}
+                className="w-2/3 flex justify-center items-center gap-2 bg-slate-800 hover:bg-slate-900 text-white py-3.5 rounded-xl font-bold transition-colors shadow-sm"
+              >
+                <Save className="h-5 w-5" />
+                保存して閉じる
+              </button>
+            </>
+          ) : (
+            <button 
+              onClick={onClose}
+              className="w-full flex justify-center items-center gap-2 bg-slate-100 hover:bg-slate-200 text-slate-700 py-3.5 rounded-xl font-bold transition-colors border border-slate-200 shadow-sm"
+            >
+              閉じる
+            </button>
+          )}
         </div>
       </div>
     </div>
