@@ -146,6 +146,36 @@ export const useTimetableStore = create<TimetableState>((set, get) => ({
       set({ user: session?.user || null });
     });
 
+    // デバウンス用のタイマーとフェッチ処理
+    let blocksTimer: ReturnType<typeof setTimeout> | null = null;
+    let classesTimer: ReturnType<typeof setTimeout> | null = null;
+
+    const fetchBlocksDebounced = () => {
+      if (blocksTimer) clearTimeout(blocksTimer);
+      blocksTimer = setTimeout(async () => {
+        try {
+          const { data: blocksData } = await supabase.from('blocks').select('*');
+          const loadedBlocks = (blocksData || []).map(mapBlockFromDB);
+          set({ blocks: loadedBlocks });
+        } catch (e) {
+          console.error('Error in debounced blocks fetch:', e);
+        }
+      }, 250);
+    };
+
+    const fetchClassesDebounced = () => {
+      if (classesTimer) clearTimeout(classesTimer);
+      classesTimer = setTimeout(async () => {
+        try {
+          const { data: classesData } = await supabase.from('classes').select('*');
+          const loadedClasses: ClassInfo[] = (classesData as ClassInfo[]) || [];
+          set({ classes: loadedClasses });
+        } catch (e) {
+          console.error('Error in debounced classes fetch:', e);
+        }
+      }, 250);
+    };
+
     try {
       // 2. データの初期ロード
       // classes
@@ -201,41 +231,29 @@ export const useTimetableStore = create<TimetableState>((set, get) => ({
       .on(
         'postgres_changes',
         { event: '*', schema: 'public', table: 'blocks' },
-        (payload) => {
-          const { eventType, new: newRecord, old: oldRecord } = payload;
-          set((state) => {
-            if (eventType === 'INSERT' || eventType === 'UPDATE') {
-              const mapped = mapBlockFromDB(newRecord);
-              const filtered = state.blocks.filter(b => b.id !== mapped.id);
-              return { blocks: [...filtered, mapped] };
-            } else if (eventType === 'DELETE') {
-              return { blocks: state.blocks.filter(b => b.id !== oldRecord.id) };
-            }
-            return {};
-          });
+        () => {
+          fetchBlocksDebounced();
         }
       )
       .on(
         'postgres_changes',
         { event: '*', schema: 'public', table: 'classes' },
-        (payload) => {
-          const { eventType, new: newRecord } = payload;
-          set((state) => {
-            if (eventType === 'INSERT' || eventType === 'UPDATE') {
-              const newClass = newRecord as ClassInfo;
-              const filtered = state.classes.filter(c => c.id !== newClass.id);
-              return { classes: [...filtered, newClass] };
-            }
-            return {};
-          });
+        () => {
+          fetchClassesDebounced();
         }
       )
       .on(
         'postgres_changes',
         { event: 'UPDATE', schema: 'public', table: 'settings' },
-        (payload) => {
-          const { new: newRecord } = payload;
-          set({ settings: mapSettingsFromDB(newRecord) });
+        async () => {
+          try {
+            const { data: settingsData } = await supabase.from('settings').select('*').eq('id', 'global').maybeSingle();
+            if (settingsData) {
+              set({ settings: mapSettingsFromDB(settingsData) });
+            }
+          } catch (e) {
+            console.error('Error updating settings from subscription:', e);
+          }
         }
       )
       .on(
@@ -315,9 +333,11 @@ export const useTimetableStore = create<TimetableState>((set, get) => ({
 
     if (!get().user) return;
     try {
-      for (const nb of newBlocks) {
-        await supabase.from('blocks').delete().match({ date: nb.date, class_id: nb.classId, period: nb.period });
-      }
+      const deletePromises = newBlocks.map(nb => 
+        supabase.from('blocks').delete().match({ date: nb.date, class_id: nb.classId, period: nb.period })
+      );
+      await Promise.all(deletePromises);
+
       if (newBlocks.length > 0) {
         await supabase.from('blocks').upsert(newBlocks.map(mapBlockToDB));
       }
