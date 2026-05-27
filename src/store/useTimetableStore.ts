@@ -298,9 +298,12 @@ export const useTimetableStore = create<TimetableState>((set, get) => ({
     if (!get().user || !prevBlocks) return;
 
     try {
-      await supabase.from('blocks').delete().neq('id', 'dummy');
+      const { error: delError } = await supabase.from('blocks').delete().neq('id', 'dummy');
+      if (delError) throw delError;
+
       if (prevBlocks.length > 0) {
-        await supabase.from('blocks').insert(prevBlocks.map(mapBlockToDB));
+        const { error: insError } = await supabase.from('blocks').insert(prevBlocks.map(mapBlockToDB));
+        if (insError) throw insError;
       }
     } catch (e) {
       console.error('Error during undo write to Supabase:', e);
@@ -311,10 +314,13 @@ export const useTimetableStore = create<TimetableState>((set, get) => ({
     set({ blocks });
     if (!get().user) return;
     try {
-      await supabase.from('blocks').delete().neq('id', 'dummy');
+      const { error: delError } = await supabase.from('blocks').delete().neq('id', 'dummy');
+      if (delError) throw delError;
+
       if (blocks.length > 0) {
         const dbBlocks = blocks.map(mapBlockToDB);
-        await supabase.from('blocks').insert(dbBlocks);
+        const { error: insError } = await supabase.from('blocks').insert(dbBlocks);
+        if (insError) throw insError;
       }
     } catch (e) {
       console.error('Error during setBlocks write to Supabase:', e);
@@ -337,14 +343,23 @@ export const useTimetableStore = create<TimetableState>((set, get) => ({
         const deletePromises = newBlocks.map(nb => 
           supabase.from('blocks').delete().match({ date: nb.date, class_id: nb.classId, period: nb.period })
         );
-        await Promise.all(deletePromises);
+        const deleteResults = await Promise.all(deletePromises);
+        for (const res of deleteResults) {
+          if (res.error) throw res.error;
+        }
       } else {
         const uniqueDates = Array.from(new Set(newBlocks.map(nb => nb.date)));
-        await supabase.from('blocks').delete().in('date', uniqueDates);
+        const uniqueClassIds = Array.from(new Set(newBlocks.map(nb => nb.classId)));
+        const { error: delError } = await supabase.from('blocks')
+          .delete()
+          .in('date', uniqueDates)
+          .in('class_id', uniqueClassIds);
+        if (delError) throw delError;
       }
 
       if (newBlocks.length > 0) {
-        await supabase.from('blocks').upsert(newBlocks.map(mapBlockToDB));
+        const { error: upsertError } = await supabase.from('blocks').upsert(newBlocks.map(mapBlockToDB));
+        if (upsertError) throw upsertError;
       }
     } catch (e) {
       console.error('Error during mergeBlocks write to Supabase:', e);
@@ -355,9 +370,12 @@ export const useTimetableStore = create<TimetableState>((set, get) => ({
     set({ classes });
     if (!get().user) return;
     try {
-      await supabase.from('classes').delete().neq('id', 'dummy');
+      const { error: delError } = await supabase.from('classes').delete().neq('id', 'dummy');
+      if (delError) throw delError;
+
       if (classes.length > 0) {
-        await supabase.from('classes').insert(classes);
+        const { error: insError } = await supabase.from('classes').insert(classes);
+        if (insError) throw insError;
       }
     } catch (e) {
       console.error('Error during setClasses write to Supabase:', e);
@@ -369,7 +387,8 @@ export const useTimetableStore = create<TimetableState>((set, get) => ({
     if (!get().user) return;
     try {
       const mapped = mapSettingsToDB(settings);
-      await supabase.from('settings').update(mapped).eq('id', 'global');
+      const { error } = await supabase.from('settings').update(mapped).eq('id', 'global');
+      if (error) throw error;
     } catch (e) {
       console.error('Error during setSettings write to Supabase:', e);
     }
@@ -393,7 +412,8 @@ export const useTimetableStore = create<TimetableState>((set, get) => ({
 
     if (!get().user || !updatedBlock) return;
     try {
-      await supabase.from('blocks').upsert(mapBlockToDB(updatedBlock));
+      const { error } = await supabase.from('blocks').upsert(mapBlockToDB(updatedBlock));
+      if (error) throw error;
     } catch (e) {
       console.error('Error during updateBlock write to Supabase:', e);
     }
@@ -418,7 +438,8 @@ export const useTimetableStore = create<TimetableState>((set, get) => ({
 
     if (!get().user || updatedBlocks.length === 0) return;
     try {
-      await supabase.from('blocks').upsert(updatedBlocks.map(mapBlockToDB));
+      const { error } = await supabase.from('blocks').upsert(updatedBlocks.map(mapBlockToDB));
+      if (error) throw error;
     } catch (e) {
       console.error('Error during updateBlocks write to Supabase:', e);
     }
@@ -432,7 +453,8 @@ export const useTimetableStore = create<TimetableState>((set, get) => ({
 
     if (!get().user) return;
     try {
-      await supabase.from('blocks').delete().eq('id', id);
+      const { error } = await supabase.from('blocks').delete().eq('id', id);
+      if (error) throw error;
     } catch (e) {
       console.error('Error during deleteBlock write to Supabase:', e);
     }
@@ -457,7 +479,8 @@ export const useTimetableStore = create<TimetableState>((set, get) => ({
 
     if (!get().user || !updatedBlock) return;
     try {
-      await supabase.from('blocks').upsert(mapBlockToDB(updatedBlock));
+      const { error } = await supabase.from('blocks').upsert(mapBlockToDB(updatedBlock));
+      if (error) throw error;
     } catch (e) {
       console.error('Error during moveBlock write to Supabase:', e);
     }
@@ -495,7 +518,8 @@ export const useTimetableStore = create<TimetableState>((set, get) => ({
     if (!get().user) return;
     try {
       if (b1 && b2) {
-        await supabase.from('blocks').upsert([mapBlockToDB(b1), mapBlockToDB(b2)]);
+        const { error } = await supabase.from('blocks').upsert([mapBlockToDB(b1), mapBlockToDB(b2)]);
+        if (error) throw error;
       }
     } catch (e) {
       console.error('Error during swapBlocks write to Supabase:', e);
@@ -541,7 +565,8 @@ export const useTimetableStore = create<TimetableState>((set, get) => ({
 
     if (!get().user || updatedBlocks.length === 0) return;
     try {
-      await supabase.from('blocks').upsert(updatedBlocks.map(mapBlockToDB));
+      const { error } = await supabase.from('blocks').upsert(updatedBlocks.map(mapBlockToDB));
+      if (error) throw error;
     } catch (e) {
       console.error('Error during swapMergedBlocks write to Supabase:', e);
     }
@@ -576,7 +601,8 @@ export const useTimetableStore = create<TimetableState>((set, get) => ({
 
     if (!get().user || updatedBlocks.length === 0) return;
     try {
-      await supabase.from('blocks').upsert(updatedBlocks.map(mapBlockToDB));
+      const { error } = await supabase.from('blocks').upsert(updatedBlocks.map(mapBlockToDB));
+      if (error) throw error;
     } catch (e) {
       console.error('Error during batchSwapPeriods write to Supabase:', e);
     }
@@ -602,7 +628,8 @@ export const useTimetableStore = create<TimetableState>((set, get) => ({
 
     if (!get().user || deletedIds.length === 0) return;
     try {
-      await supabase.from('blocks').delete().in('id', deletedIds);
+      const { error } = await supabase.from('blocks').delete().in('id', deletedIds);
+      if (error) throw error;
     } catch (e) {
       console.error('Error during batchDeletePeriod write to Supabase:', e);
     }
@@ -654,10 +681,12 @@ export const useTimetableStore = create<TimetableState>((set, get) => ({
     if (!get().user) return;
     try {
       if (deletedIds.length > 0) {
-        await supabase.from('blocks').delete().in('id', deletedIds);
+        const { error: delError } = await supabase.from('blocks').delete().in('id', deletedIds);
+        if (delError) throw delError;
       }
       if (createdBlocks.length > 0) {
-        await supabase.from('blocks').insert(createdBlocks.map(mapBlockToDB));
+        const { error: insError } = await supabase.from('blocks').insert(createdBlocks.map(mapBlockToDB));
+        if (insError) throw insError;
       }
     } catch (e) {
       console.error('Error during batchUpdatePeriod write to Supabase:', e);
@@ -699,10 +728,12 @@ export const useTimetableStore = create<TimetableState>((set, get) => ({
     if (!get().user) return;
     try {
       if (deletedIds.length > 0) {
-        await supabase.from('blocks').delete().in('id', deletedIds);
+        const { error: delError } = await supabase.from('blocks').delete().in('id', deletedIds);
+        if (delError) throw delError;
       }
       if (createdBlocks.length > 0) {
-        await supabase.from('blocks').insert(createdBlocks.map(mapBlockToDB));
+        const { error: insError } = await supabase.from('blocks').insert(createdBlocks.map(mapBlockToDB));
+        if (insError) throw insError;
       }
     } catch (e) {
       console.error('Error during copyDayTimetable write to Supabase:', e);
@@ -722,12 +753,13 @@ export const useTimetableStore = create<TimetableState>((set, get) => ({
 
     if (!get().user) return;
     try {
-      await supabase.from('logs').insert({
+      const { error } = await supabase.from('logs').insert({
         id: newLog.id,
         timestamp: newLog.timestamp,
         action: newLog.action,
         details: { message: newLog.details }
       });
+      if (error) throw error;
     } catch (e) {
       console.error('Error during addLog write to Supabase:', e);
     }
