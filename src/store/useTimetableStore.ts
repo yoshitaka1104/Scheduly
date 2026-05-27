@@ -333,10 +333,15 @@ export const useTimetableStore = create<TimetableState>((set, get) => ({
 
     if (!get().user) return;
     try {
-      const deletePromises = newBlocks.map(nb => 
-        supabase.from('blocks').delete().match({ date: nb.date, class_id: nb.classId, period: nb.period })
-      );
-      await Promise.all(deletePromises);
+      if (newBlocks.length <= 5) {
+        const deletePromises = newBlocks.map(nb => 
+          supabase.from('blocks').delete().match({ date: nb.date, class_id: nb.classId, period: nb.period })
+        );
+        await Promise.all(deletePromises);
+      } else {
+        const uniqueDates = Array.from(new Set(newBlocks.map(nb => nb.date)));
+        await supabase.from('blocks').delete().in('date', uniqueDates);
+      }
 
       if (newBlocks.length > 0) {
         await supabase.from('blocks').upsert(newBlocks.map(mapBlockToDB));
