@@ -4,6 +4,7 @@ import * as XLSX from 'xlsx';
 import { Upload, Save, Settings, Info, CheckCircle2, AlertCircle } from 'lucide-react';
 import { ClassInfo, TimetableBlock, Period } from '../types';
 import { format, addDays } from 'date-fns';
+import { supabase } from '../lib/supabaseClient';
 
 export function AdminDashboard() {
   const { settings, setSettings, classes, setClasses, mergeBlocks, currentDate } = useTimetableStore();
@@ -213,7 +214,22 @@ export function AdminDashboard() {
             </div>
           </div>
 
-          <div className="flex justify-end pt-2">
+          <div className="flex justify-end pt-2 gap-3">
+            <button 
+              onClick={async () => {
+                try {
+                  const { count, error } = await supabase.from('blocks').select('*', { count: 'exact', head: true });
+                  if (error) alert(`診断エラー: ${error.message}`);
+                  else alert(`現在のデータベース内の総ブロック数: ${count}件`);
+                } catch (e: any) {
+                  alert(`診断エラー: ${e.message || e}`);
+                }
+              }}
+              className="flex items-center gap-2 bg-slate-200 hover:bg-slate-300 text-slate-700 px-5 py-2.5 rounded-lg font-medium transition-colors shadow-sm"
+            >
+              <Info className="h-5 w-5" />
+              DBデータ数診断
+            </button>
             <button 
               onClick={handleSaveSettings}
               className="flex items-center gap-2 bg-indigo-600 hover:bg-indigo-700 text-white px-5 py-2.5 rounded-lg font-medium transition-colors shadow-sm"
