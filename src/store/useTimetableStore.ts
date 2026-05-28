@@ -363,7 +363,7 @@ export const useTimetableStore = create<TimetableState>((set, get) => ({
       }
     } catch (e: any) {
       console.error('Error during undo write to Supabase:', e);
-      set({ dbError: `保存エラー (Undo): ${e.message || e}` });
+      set({ dbError: `保存に失敗しました（）：${e.message || e}` });
     }
   },
 
@@ -384,7 +384,7 @@ export const useTimetableStore = create<TimetableState>((set, get) => ({
       }
     } catch (e: any) {
       console.error('Error during setBlocks write to Supabase:', e);
-      set({ dbError: `保存エラー (setBlocks): ${e.message || e}` });
+      set({ dbError: `保存に失敗しました（）：${e.message || e}` });
     }
   },
 
@@ -454,7 +454,7 @@ export const useTimetableStore = create<TimetableState>((set, get) => ({
 
     } catch (e: any) {
       console.error('Error during mergeBlocks write to Supabase:', e);
-      set({ dbError: `保存エラー (マージ/インポート): ${e.message || e}` });
+      set({ dbError: `保存に失敗しました（）：${e.message || e}` });
     }
   },
 
@@ -474,7 +474,7 @@ export const useTimetableStore = create<TimetableState>((set, get) => ({
       }
     } catch (e: any) {
       console.error('Error during setClasses write to Supabase:', e);
-      set({ dbError: `保存エラー (クラス設定): ${e.message || e}` });
+      set({ dbError: `保存に失敗しました（）：${e.message || e}` });
     }
   },
 
@@ -490,7 +490,7 @@ export const useTimetableStore = create<TimetableState>((set, get) => ({
       if (error) throw error;
     } catch (e: any) {
       console.error('Error during setSettings write to Supabase:', e);
-      set({ dbError: `保存エラー (設定): ${e.message || e}` });
+      set({ dbError: `保存に失敗しました（）：${e.message || e}` });
     }
   },
   
@@ -521,7 +521,7 @@ export const useTimetableStore = create<TimetableState>((set, get) => ({
       if (error) throw error;
     } catch (e: any) {
       console.error('Error during updateBlock write to Supabase:', e);
-      set({ dbError: `保存エラー (ブロック更新): ${e.message || e}` });
+      set({ dbError: `保存に失敗しました（）：${e.message || e}` });
     }
   },
 
@@ -552,7 +552,7 @@ export const useTimetableStore = create<TimetableState>((set, get) => ({
       if (error) throw error;
     } catch (e: any) {
       console.error('Error during updateBlocks write to Supabase:', e);
-      set({ dbError: `保存エラー (複数ブロック更新): ${e.message || e}` });
+      set({ dbError: `保存に失敗しました（）：${e.message || e}` });
     }
   },
   
@@ -572,7 +572,7 @@ export const useTimetableStore = create<TimetableState>((set, get) => ({
       if (error) throw error;
     } catch (e: any) {
       console.error('Error during deleteBlock write to Supabase:', e);
-      set({ dbError: `削除エラー: ${e.message || e}` });
+      set({ dbError: `削除に失敗しました： ${e.message || e}` });
     }
   },
 
@@ -603,7 +603,7 @@ export const useTimetableStore = create<TimetableState>((set, get) => ({
       if (error) throw error;
     } catch (e: any) {
       console.error('Error during moveBlock write to Supabase:', e);
-      set({ dbError: `保存エラー (移動): ${e.message || e}` });
+      set({ dbError: `保存に失敗しました（）：${e.message || e}` });
     }
   },
 
@@ -648,7 +648,7 @@ export const useTimetableStore = create<TimetableState>((set, get) => ({
       }
     } catch (e: any) {
       console.error('Error during swapBlocks write to Supabase:', e);
-      set({ dbError: `保存エラー (入れ替え): ${e.message || e}` });
+      set({ dbError: `保存に失敗しました（）：${e.message || e}` });
     }
   },
 
@@ -699,7 +699,7 @@ export const useTimetableStore = create<TimetableState>((set, get) => ({
       if (error) throw error;
     } catch (e: any) {
       console.error('Error during swapMergedBlocks write to Supabase:', e);
-      set({ dbError: `保存エラー (結合セル入れ替え): ${e.message || e}` });
+      set({ dbError: `保存に失敗しました（）：${e.message || e}` });
     }
   },
 
@@ -740,7 +740,7 @@ export const useTimetableStore = create<TimetableState>((set, get) => ({
       if (error) throw error;
     } catch (e: any) {
       console.error('Error during batchSwapPeriods write to Supabase:', e);
-      set({ dbError: `保存エラー (一括入替): ${e.message || e}` });
+      set({ dbError: `保存に失敗しました（）：${e.message || e}` });
     }
   },
 
@@ -772,7 +772,7 @@ export const useTimetableStore = create<TimetableState>((set, get) => ({
       if (error) throw error;
     } catch (e: any) {
       console.error('Error during batchDeletePeriod write to Supabase:', e);
-      set({ dbError: `保存エラー (一括削除): ${e.message || e}` });
+      set({ dbError: `保存に失敗しました（）：${e.message || e}` });
     }
   },
 
@@ -835,7 +835,7 @@ export const useTimetableStore = create<TimetableState>((set, get) => ({
       }
     } catch (e: any) {
       console.error('Error during batchUpdatePeriod write to Supabase:', e);
-      set({ dbError: `保存エラー (一括変更): ${e.message || e}` });
+      set({ dbError: `保存に失敗しました（）：${e.message || e}` });
     }
   },
 
@@ -904,7 +904,7 @@ export const useTimetableStore = create<TimetableState>((set, get) => ({
 
     } catch (e: any) {
       console.error('Error during copyDayTimetable write to Supabase:', e);
-      set({ dbError: `保存エラー (日課コピー): ${e.message || e}` });
+      set({ dbError: `保存に失敗しました（）：${e.message || e}` });
     }
   },
 

@@ -40,7 +40,7 @@ export function AdminDashboard() {
     setImportStatus({ type: 'info', message: 'ファイルを解析中...' });
 
     const reader = new FileReader();
-    reader.onload = (evt) => {
+    reader.onload = async (evt) => {
       try {
         const bstr = evt.target?.result;
         const wb = XLSX.read(bstr, { type: 'binary' });
@@ -123,14 +123,25 @@ export function AdminDashboard() {
         });
 
         if (importedBlocks.length > 0) {
-          mergeBlocks(importedBlocks);
-          setImportStatus({ type: 'success', message: `${importedBlocks.length}件のコマデータをインポートしました。` });
+          try {
+            await mergeBlocks(importedBlocks);
+            
+            // storeにエラーがセットされていないか確認
+            const currentError = useTimetableStore.getState().dbError;
+            if (currentError) {
+              setImportStatus({ type: 'error', message: currentError });
+            } else {
+              setImportStatus({ type: 'success', message: `${importedBlocks.length}件のコマデータをインポートしました。` });
+            }
+          } catch (err: any) {
+            setImportStatus({ type: 'error', message: `保存に失敗しました：${err.message || '不明なエラー'}` });
+          }
         } else {
           setImportStatus({ type: 'error', message: 'インポートできるデータが見つかりませんでした。クラス名（例: "1年1組"）やヘッダー列名（曜日, 時限, 科目名）を確認してください。' });
         }
       } catch (err: any) {
         console.error('Excel Import Error:', err);
-        setImportStatus({ type: 'error', message: `エラーが発生しました: ${err.message || '不明なエラー'}` });
+        setImportStatus({ type: 'error', message: `保存に失敗しました：${err.message || '不明なエラー'}` });
       }
     };
     reader.readAsBinaryString(file);
