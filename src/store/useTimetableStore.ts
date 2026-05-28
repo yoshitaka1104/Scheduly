@@ -20,6 +20,10 @@ interface TimetableState {
   login: (password: string) => Promise<{ error: any | null }>;
   logout: () => Promise<void>;
   
+  // エラー監視
+  dbError: string | null;
+  setDbError: (error: string | null) => void;
+  
   // 初期ロードと購読
   initializeStore: () => Promise<void>;
   
@@ -117,9 +121,13 @@ export const useTimetableStore = create<TimetableState>((set, get) => ({
   
   user: null,
   isInitializing: true,
+  dbError: null,
+
+  setDbError: (error) => set({ dbError: error }),
 
   // ログイン処理（共通のメールアドレスを使用し、パスワードのみでログイン）
   login: async (password) => {
+    set({ dbError: null });
     const email = 'admin@scheduly.internal';
     const { data, error } = await supabase.auth.signInWithPassword({ email, password });
     if (!error && data.user) {
@@ -130,13 +138,14 @@ export const useTimetableStore = create<TimetableState>((set, get) => ({
 
   // ログアウト処理
   logout: async () => {
+    set({ dbError: null });
     await supabase.auth.signOut();
     set({ user: null });
   },
 
   // 初期ロードと購読
   initializeStore: async () => {
-    set({ isInitializing: true });
+    set({ isInitializing: true, dbError: null });
 
     // 1. ログイン状態の取得と監視
     const { data: { session } } = await supabase.auth.getSession();
@@ -154,11 +163,16 @@ export const useTimetableStore = create<TimetableState>((set, get) => ({
       if (blocksTimer) clearTimeout(blocksTimer);
       blocksTimer = setTimeout(async () => {
         try {
-          const { data: blocksData } = await supabase.from('blocks').select('*');
+          const { data: blocksData, error } = await supabase.from('blocks').select('*');
+          if (error) {
+            set({ dbError: `同期中のデータ取得に失敗しました: ${error.message} (${error.code})` });
+            return;
+          }
           const loadedBlocks = (blocksData || []).map(mapBlockFromDB);
           set({ blocks: loadedBlocks });
-        } catch (e) {
+        } catch (e: any) {
           console.error('Error in debounced blocks fetch:', e);
+          set({ dbError: `同期エラー: ${e.message || e}` });
         }
       }, 250);
     };
@@ -167,10 +181,14 @@ export const useTimetableStore = create<TimetableState>((set, get) => ({
       if (classesTimer) clearTimeout(classesTimer);
       classesTimer = setTimeout(async () => {
         try {
-          const { data: classesData } = await supabase.from('classes').select('*');
+          const { data: classesData, error } = await supabase.from('classes').select('*');
+          if (error) {
+            set({ dbError: `クラスデータの同期に失敗しました: ${error.message}` });
+            return;
+          }
           const loadedClasses: ClassInfo[] = (classesData as ClassInfo[]) || [];
           set({ classes: loadedClasses });
-        } catch (e) {
+        } catch (e: any) {
           console.error('Error in debounced classes fetch:', e);
         }
       }, 250);
@@ -179,34 +197,40 @@ export const useTimetableStore = create<TimetableState>((set, get) => ({
     try {
       // 2. データの初期ロード
       // classes
-      const { data: classesData } = await supabase.from('classes').select('*');
+      const { data: classesData, error: classErr } = await supabase.from('classes').select('*');
+      if (classErr) throw classErr;
       let loadedClasses: ClassInfo[] = (classesData as ClassInfo[]) || [];
       if (loadedClasses.length === 0) {
         loadedClasses = generateDefaultClasses();
         const { data: { session: activeSession } } = await supabase.auth.getSession();
         if (activeSession?.user) {
-          await supabase.from('classes').insert(loadedClasses);
+          const { error: insErr } = await supabase.from('classes').insert(loadedClasses);
+          if (insErr) throw insErr;
         }
       }
 
       // settings
-      const { data: settingsData } = await supabase.from('settings').select('*').eq('id', 'global').maybeSingle();
+      const { data: settingsData, error: settingsErr } = await supabase.from('settings').select('*').eq('id', 'global').maybeSingle();
+      if (settingsErr) throw settingsErr;
       let loadedSettings: Settings = { periodsPerDay: 7, namingRule: 'number' };
       if (settingsData) {
         loadedSettings = mapSettingsFromDB(settingsData);
       } else {
         const { data: { session: activeSession } } = await supabase.auth.getSession();
         if (activeSession?.user) {
-          await supabase.from('settings').insert({ id: 'global', periods_per_day: 7, naming_rule: 'number' });
+          const { error: insErr } = await supabase.from('settings').insert({ id: 'global', periods_per_day: 7, naming_rule: 'number' });
+          if (insErr) throw insErr;
         }
       }
 
       // blocks
-      const { data: blocksData } = await supabase.from('blocks').select('*');
+      const { data: blocksData, error: blocksErr } = await supabase.from('blocks').select('*');
+      if (blocksErr) throw blocksErr;
       const loadedBlocks = (blocksData || []).map(mapBlockFromDB);
 
       // logs
-      const { data: logsData } = await supabase.from('logs').select('*').order('timestamp', { ascending: false }).limit(50);
+      const { data: logsData, error: logsErr } = await supabase.from('logs').select('*').order('timestamp', { ascending: false }).limit(50);
+      if (logsErr) throw logsErr;
       const loadedLogs: AuditLog[] = (logsData || []).map(l => ({
         id: l.id,
         timestamp: l.timestamp,
@@ -221,9 +245,12 @@ export const useTimetableStore = create<TimetableState>((set, get) => ({
         logs: loadedLogs,
         isInitializing: false
       });
-    } catch (e) {
+    } catch (e: any) {
       console.error('Error initializing store data from Supabase:', e);
-      set({ isInitializing: false });
+      set({ 
+        isInitializing: false, 
+        dbError: `起動時のデータ取得に失敗しました。URLやAPIキー、インターネット接続を確認してください: ${e.message || e}` 
+      });
     }
 
     // 3. リアルタイム同期の有効化
@@ -291,11 +318,16 @@ export const useTimetableStore = create<TimetableState>((set, get) => ({
       return { 
         blocks: prevBlocks, 
         pastBlocks: newPastBlocks,
-        logs: newLogs
+        logs: newLogs,
+        dbError: null
       };
     });
 
-    if (!get().user || !prevBlocks) return;
+    if (!get().user) {
+      set({ dbError: 'ログインしていないため、元に戻した時間割を保存できませんでした。編集ログインをしてください。' });
+      return;
+    }
+    if (!prevBlocks) return;
 
     try {
       const { error: delError } = await supabase.from('blocks').delete().neq('id', 'dummy');
@@ -305,14 +337,18 @@ export const useTimetableStore = create<TimetableState>((set, get) => ({
         const { error: insError } = await supabase.from('blocks').insert(prevBlocks.map(mapBlockToDB));
         if (insError) throw insError;
       }
-    } catch (e) {
+    } catch (e: any) {
       console.error('Error during undo write to Supabase:', e);
+      set({ dbError: `保存エラー (Undo): ${e.message || e}` });
     }
   },
 
   setBlocks: async (blocks) => {
-    set({ blocks });
-    if (!get().user) return;
+    set({ blocks, dbError: null });
+    if (!get().user) {
+      set({ dbError: 'ログインしていないため、時間割データを保存できませんでした。編集ログインをしてください。' });
+      return;
+    }
     try {
       const { error: delError } = await supabase.from('blocks').delete().neq('id', 'dummy');
       if (delError) throw delError;
@@ -322,8 +358,9 @@ export const useTimetableStore = create<TimetableState>((set, get) => ({
         const { error: insError } = await supabase.from('blocks').insert(dbBlocks);
         if (insError) throw insError;
       }
-    } catch (e) {
+    } catch (e: any) {
       console.error('Error during setBlocks write to Supabase:', e);
+      set({ dbError: `保存エラー (setBlocks): ${e.message || e}` });
     }
   },
 
@@ -333,11 +370,15 @@ export const useTimetableStore = create<TimetableState>((set, get) => ({
       const existingFiltered = state.blocks.filter(b => !newBlocksSet.has(`${b.date}-${b.classId}-${b.period}`));
       return { 
         pastBlocks: [...state.pastBlocks.slice(-19), state.blocks],
-        blocks: [...existingFiltered, ...newBlocks] 
+        blocks: [...existingFiltered, ...newBlocks],
+        dbError: null
       };
     });
 
-    if (!get().user) return;
+    if (!get().user) {
+      set({ dbError: 'ログインしていないため、インポートした時間割をデータベースに保存できませんでした。右上の「編集ログイン」からログインしてください。' });
+      return;
+    }
     try {
       if (newBlocks.length <= 5) {
         const deletePromises = newBlocks.map(nb => 
@@ -361,14 +402,18 @@ export const useTimetableStore = create<TimetableState>((set, get) => ({
         const { error: upsertError } = await supabase.from('blocks').upsert(newBlocks.map(mapBlockToDB));
         if (upsertError) throw upsertError;
       }
-    } catch (e) {
+    } catch (e: any) {
       console.error('Error during mergeBlocks write to Supabase:', e);
+      set({ dbError: `保存エラー (マージ/インポート): ${e.message || e}` });
     }
   },
 
   setClasses: async (classes) => {
-    set({ classes });
-    if (!get().user) return;
+    set({ classes, dbError: null });
+    if (!get().user) {
+      set({ dbError: 'ログインしていないため、クラスデータを保存できませんでした。編集ログインをしてください。' });
+      return;
+    }
     try {
       const { error: delError } = await supabase.from('classes').delete().neq('id', 'dummy');
       if (delError) throw delError;
@@ -377,20 +422,25 @@ export const useTimetableStore = create<TimetableState>((set, get) => ({
         const { error: insError } = await supabase.from('classes').insert(classes);
         if (insError) throw insError;
       }
-    } catch (e) {
+    } catch (e: any) {
       console.error('Error during setClasses write to Supabase:', e);
+      set({ dbError: `保存エラー (クラス設定): ${e.message || e}` });
     }
   },
 
   setSettings: async (settings) => {
-    set((state) => ({ settings: { ...state.settings, ...settings } }));
-    if (!get().user) return;
+    set((state) => ({ settings: { ...state.settings, ...settings }, dbError: null }));
+    if (!get().user) {
+      set({ dbError: 'ログインしていないため、基本設定を保存できませんでした。編集ログインをしてください。' });
+      return;
+    }
     try {
       const mapped = mapSettingsToDB(settings);
       const { error } = await supabase.from('settings').update(mapped).eq('id', 'global');
       if (error) throw error;
-    } catch (e) {
+    } catch (e: any) {
       console.error('Error during setSettings write to Supabase:', e);
+      set({ dbError: `保存エラー (設定): ${e.message || e}` });
     }
   },
   
@@ -406,16 +456,22 @@ export const useTimetableStore = create<TimetableState>((set, get) => ({
       });
       return {
         pastBlocks: [...state.pastBlocks.slice(-19), state.blocks],
-        blocks: newBlocks
+        blocks: newBlocks,
+        dbError: null
       };
     });
 
-    if (!get().user || !updatedBlock) return;
+    if (!get().user) {
+      set({ dbError: 'ログインしていないため、変更をデータベースに保存できませんでした。編集ログインをしてください。' });
+      return;
+    }
+    if (!updatedBlock) return;
     try {
       const { error } = await supabase.from('blocks').upsert(mapBlockToDB(updatedBlock));
       if (error) throw error;
-    } catch (e) {
+    } catch (e: any) {
       console.error('Error during updateBlock write to Supabase:', e);
+      set({ dbError: `保存エラー (ブロック更新): ${e.message || e}` });
     }
   },
 
@@ -432,31 +488,41 @@ export const useTimetableStore = create<TimetableState>((set, get) => ({
       });
       return {
         pastBlocks: [...state.pastBlocks.slice(-19), state.blocks],
-        blocks: newBlocks
+        blocks: newBlocks,
+        dbError: null
       };
     });
 
-    if (!get().user || updatedBlocks.length === 0) return;
+    if (!get().user || updatedBlocks.length === 0) {
+      if (!get().user) set({ dbError: 'ログインしていないため、一括変更をデータベースに保存できませんでした。' });
+      return;
+    }
     try {
       const { error } = await supabase.from('blocks').upsert(updatedBlocks.map(mapBlockToDB));
       if (error) throw error;
-    } catch (e) {
+    } catch (e: any) {
       console.error('Error during updateBlocks write to Supabase:', e);
+      set({ dbError: `保存エラー (複数ブロック更新): ${e.message || e}` });
     }
   },
   
   deleteBlock: async (id) => {
     set((state) => ({
       pastBlocks: [...state.pastBlocks.slice(-19), state.blocks],
-      blocks: state.blocks.filter(b => b.id !== id)
+      blocks: state.blocks.filter(b => b.id !== id),
+      dbError: null
     }));
 
-    if (!get().user) return;
+    if (!get().user) {
+      set({ dbError: 'ログインしていないため、コマの削除をデータベースに保存できませんでした。' });
+      return;
+    }
     try {
       const { error } = await supabase.from('blocks').delete().eq('id', id);
       if (error) throw error;
-    } catch (e) {
+    } catch (e: any) {
       console.error('Error during deleteBlock write to Supabase:', e);
+      set({ dbError: `削除エラー: ${e.message || e}` });
     }
   },
 
@@ -473,16 +539,21 @@ export const useTimetableStore = create<TimetableState>((set, get) => ({
       });
       return {
         pastBlocks: [...state.pastBlocks.slice(-19), state.blocks],
-        blocks: newBlocks
+        blocks: newBlocks,
+        dbError: null
       };
     });
 
-    if (!get().user || !updatedBlock) return;
+    if (!get().user || !updatedBlock) {
+      if (!get().user) set({ dbError: 'ログインしていないため、コマの移動をデータベースに保存できませんでした。' });
+      return;
+    }
     try {
       const { error } = await supabase.from('blocks').upsert(mapBlockToDB(updatedBlock));
       if (error) throw error;
-    } catch (e) {
+    } catch (e: any) {
       console.error('Error during moveBlock write to Supabase:', e);
+      set({ dbError: `保存エラー (移動): ${e.message || e}` });
     }
   },
 
@@ -511,18 +582,23 @@ export const useTimetableStore = create<TimetableState>((set, get) => ({
 
       return { 
         pastBlocks: [...state.pastBlocks.slice(-19), state.blocks],
-        blocks: newBlocks 
+        blocks: newBlocks,
+        dbError: null
       };
     });
 
-    if (!get().user) return;
+    if (!get().user) {
+      set({ dbError: 'ログインしていないため、入れ替えをデータベースに保存できませんでした。' });
+      return;
+    }
     try {
       if (b1 && b2) {
         const { error } = await supabase.from('blocks').upsert([mapBlockToDB(b1), mapBlockToDB(b2)]);
         if (error) throw error;
       }
-    } catch (e) {
+    } catch (e: any) {
       console.error('Error during swapBlocks write to Supabase:', e);
+      set({ dbError: `保存エラー (入れ替え): ${e.message || e}` });
     }
   },
 
@@ -559,16 +635,21 @@ export const useTimetableStore = create<TimetableState>((set, get) => ({
 
       return {
         pastBlocks: [...state.pastBlocks.slice(-19), state.blocks],
-        blocks: newBlocks
+        blocks: newBlocks,
+        dbError: null
       };
     });
 
-    if (!get().user || updatedBlocks.length === 0) return;
+    if (!get().user || updatedBlocks.length === 0) {
+      if (!get().user) set({ dbError: 'ログインしていないため、結合セルの入れ替えをデータベースに保存できませんでした。' });
+      return;
+    }
     try {
       const { error } = await supabase.from('blocks').upsert(updatedBlocks.map(mapBlockToDB));
       if (error) throw error;
-    } catch (e) {
+    } catch (e: any) {
       console.error('Error during swapMergedBlocks write to Supabase:', e);
+      set({ dbError: `保存エラー (結合セル入れ替え): ${e.message || e}` });
     }
   },
 
@@ -595,16 +676,21 @@ export const useTimetableStore = create<TimetableState>((set, get) => ({
       });
       return { 
         pastBlocks: [...state.pastBlocks.slice(-19), state.blocks],
-        blocks: newBlocks 
+        blocks: newBlocks,
+        dbError: null
       };
     });
 
-    if (!get().user || updatedBlocks.length === 0) return;
+    if (!get().user || updatedBlocks.length === 0) {
+      if (!get().user) set({ dbError: 'ログインしていないため、一括入替をデータベースに保存できませんでした。' });
+      return;
+    }
     try {
       const { error } = await supabase.from('blocks').upsert(updatedBlocks.map(mapBlockToDB));
       if (error) throw error;
-    } catch (e) {
+    } catch (e: any) {
       console.error('Error during batchSwapPeriods write to Supabase:', e);
+      set({ dbError: `保存エラー (一括入替): ${e.message || e}` });
     }
   },
 
@@ -622,16 +708,21 @@ export const useTimetableStore = create<TimetableState>((set, get) => ({
       });
       return { 
         pastBlocks: [...state.pastBlocks.slice(-19), state.blocks],
-        blocks: newBlocks 
+        blocks: newBlocks,
+        dbError: null
       };
     });
 
-    if (!get().user || deletedIds.length === 0) return;
+    if (!get().user || deletedIds.length === 0) {
+      if (!get().user) set({ dbError: 'ログインしていないため、一括削除をデータベースに保存できませんでした。' });
+      return;
+    }
     try {
       const { error } = await supabase.from('blocks').delete().in('id', deletedIds);
       if (error) throw error;
-    } catch (e) {
+    } catch (e: any) {
       console.error('Error during batchDeletePeriod write to Supabase:', e);
+      set({ dbError: `保存エラー (一括削除): ${e.message || e}` });
     }
   },
 
@@ -674,11 +765,15 @@ export const useTimetableStore = create<TimetableState>((set, get) => ({
       createdBlocks = newBlocks;
       return { 
         pastBlocks: [...state.pastBlocks.slice(-19), state.blocks],
-        blocks: [...filteredBlocks, ...newBlocks] 
+        blocks: [...filteredBlocks, ...newBlocks],
+        dbError: null
       };
     });
 
-    if (!get().user) return;
+    if (!get().user) {
+      set({ dbError: 'ログインしていないため、一括変更をデータベースに保存できませんでした。' });
+      return;
+    }
     try {
       if (deletedIds.length > 0) {
         const { error: delError } = await supabase.from('blocks').delete().in('id', deletedIds);
@@ -688,8 +783,9 @@ export const useTimetableStore = create<TimetableState>((set, get) => ({
         const { error: insError } = await supabase.from('blocks').insert(createdBlocks.map(mapBlockToDB));
         if (insError) throw insError;
       }
-    } catch (e) {
+    } catch (e: any) {
       console.error('Error during batchUpdatePeriod write to Supabase:', e);
+      set({ dbError: `保存エラー (一括変更): ${e.message || e}` });
     }
   },
 
@@ -721,11 +817,15 @@ export const useTimetableStore = create<TimetableState>((set, get) => ({
       createdBlocks = newBlocks;
       return { 
         pastBlocks: [...state.pastBlocks.slice(-19), state.blocks],
-        blocks: [...filteredBlocks, ...newBlocks] 
+        blocks: [...filteredBlocks, ...newBlocks],
+        dbError: null
       };
     });
 
-    if (!get().user) return;
+    if (!get().user) {
+      set({ dbError: 'ログインしていないため、日課コピーをデータベースに保存できませんでした。' });
+      return;
+    }
     try {
       if (deletedIds.length > 0) {
         const { error: delError } = await supabase.from('blocks').delete().in('id', deletedIds);
@@ -735,8 +835,9 @@ export const useTimetableStore = create<TimetableState>((set, get) => ({
         const { error: insError } = await supabase.from('blocks').insert(createdBlocks.map(mapBlockToDB));
         if (insError) throw insError;
       }
-    } catch (e) {
+    } catch (e: any) {
       console.error('Error during copyDayTimetable write to Supabase:', e);
+      set({ dbError: `保存エラー (日課コピー): ${e.message || e}` });
     }
   },
 
@@ -748,7 +849,8 @@ export const useTimetableStore = create<TimetableState>((set, get) => ({
     };
 
     set((state) => ({
-      logs: [newLog, ...state.logs]
+      logs: [newLog, ...state.logs],
+      dbError: null
     }));
 
     if (!get().user) return;
@@ -760,7 +862,7 @@ export const useTimetableStore = create<TimetableState>((set, get) => ({
         details: { message: newLog.details }
       });
       if (error) throw error;
-    } catch (e) {
+    } catch (e: any) {
       console.error('Error during addLog write to Supabase:', e);
     }
   }

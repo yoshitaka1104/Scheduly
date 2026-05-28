@@ -39,7 +39,9 @@ function App() {
     user,
     isInitializing,
     initializeStore,
-    logout
+    logout,
+    dbError,
+    setDbError
   } = useTimetableStore();
 
   const dateInputRef = React.useRef<HTMLInputElement>(null);
@@ -207,6 +209,22 @@ function App() {
           </nav>
         </div>
       </header>
+
+      {dbError && (
+        <div className="bg-rose-600 text-white px-4 py-3 flex items-center justify-between shadow-md animate-in slide-in-from-top duration-200">
+          <div className="flex items-center gap-2 max-w-[90%] mx-auto">
+            <span className="font-bold text-sm text-center tracking-wide leading-relaxed">
+              ⚠️ {dbError}
+            </span>
+          </div>
+          <button 
+            onClick={() => setDbError(null)} 
+            className="text-white hover:text-rose-100 font-bold text-xs bg-rose-700/50 hover:bg-rose-700 px-3 py-1.5 rounded-lg border border-rose-500 shrink-0 transition-colors"
+          >
+            閉じる
+          </button>
+        </div>
+      )}
 
       <main className={`flex-1 max-w-[1400px] mx-auto px-4 py-6 w-full flex flex-col ${view === 'board' ? 'h-[calc(100vh-4rem)]' : ''}`}>
         {view === 'board' ? (
