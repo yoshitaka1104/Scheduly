@@ -2,6 +2,7 @@ import { create } from 'zustand';
 import { supabase } from '../lib/supabaseClient';
 import { User } from '@supabase/supabase-js';
 import { TimetableBlock, ClassInfo, Settings, AuditLog, Period } from '../types';
+import { format } from 'date-fns';
 
 interface TimetableState {
   currentDate: Date;
@@ -163,7 +164,11 @@ export const useTimetableStore = create<TimetableState>((set, get) => ({
       if (blocksTimer) clearTimeout(blocksTimer);
       blocksTimer = setTimeout(async () => {
         try {
-          const { data: blocksData, error } = await supabase.from('blocks').select('*');
+          const dateStr = format(get().currentDate, 'yyyy-MM-dd');
+          const { data: blocksData, error } = await supabase
+            .from('blocks')
+            .select('*')
+            .eq('date', dateStr);
           if (error) {
             set({ dbError: `同期中のデータ取得に失敗しました: ${error.message} (${error.code})` });
             return;
@@ -224,7 +229,11 @@ export const useTimetableStore = create<TimetableState>((set, get) => ({
       }
 
       // blocks
-      const { data: blocksData, error: blocksErr } = await supabase.from('blocks').select('*');
+      const dateStr = format(get().currentDate, 'yyyy-MM-dd');
+      const { data: blocksData, error: blocksErr } = await supabase
+        .from('blocks')
+        .select('*')
+        .eq('date', dateStr);
       if (blocksErr) throw blocksErr;
       const loadedBlocks = (blocksData || []).map(mapBlockFromDB);
 
@@ -305,7 +314,21 @@ export const useTimetableStore = create<TimetableState>((set, get) => ({
 
   setDisplayMode: (mode) => set({ displayMode: mode }),
   setIsChangeOnlyView: (value) => set({ isChangeOnlyView: value }),
-  setCurrentDate: (date) => set({ currentDate: date }),
+  setCurrentDate: async (date) => {
+    set({ currentDate: date, dbError: null });
+    const dateStr = format(date, 'yyyy-MM-dd');
+    try {
+      const { data: blocksData, error } = await supabase
+        .from('blocks')
+        .select('*')
+        .eq('date', dateStr);
+      if (error) throw error;
+      set({ blocks: (blocksData || []).map(mapBlockFromDB) });
+    } catch (e: any) {
+      console.error('Error fetching blocks for date:', dateStr, e);
+      set({ dbError: `日付切り替え時のデータ取得に失敗しました: ${e.message || e}` });
+    }
+  },
   setVisibleGrades: (grades) => set({ visibleGrades: grades }),
 
   undo: async () => {
@@ -330,7 +353,8 @@ export const useTimetableStore = create<TimetableState>((set, get) => ({
     if (!prevBlocks) return;
 
     try {
-      const { error: delError } = await supabase.from('blocks').delete().neq('id', 'dummy');
+      const dateStr = format(get().currentDate, 'yyyy-MM-dd');
+      const { error: delError } = await supabase.from('blocks').delete().eq('date', dateStr);
       if (delError) throw delError;
 
       if (prevBlocks.length > 0) {
@@ -366,11 +390,13 @@ export const useTimetableStore = create<TimetableState>((set, get) => ({
 
   mergeBlocks: async (newBlocks) => {
     set((state) => {
-      const newBlocksSet = new Set(newBlocks.map(nb => `${nb.date}-${nb.classId}-${nb.period}`));
+      const curDateStr = format(state.currentDate, 'yyyy-MM-dd');
+      const todayNewBlocks = newBlocks.filter(nb => nb.date === curDateStr);
+      const newBlocksSet = new Set(todayNewBlocks.map(nb => `${nb.date}-${nb.classId}-${nb.period}`));
       const existingFiltered = state.blocks.filter(b => !newBlocksSet.has(`${b.date}-${b.classId}-${b.period}`));
       return { 
         pastBlocks: [...state.pastBlocks.slice(-19), state.blocks],
-        blocks: [...existingFiltered, ...newBlocks],
+        blocks: [...existingFiltered, ...todayNewBlocks],
         dbError: null
       };
     });
@@ -402,6 +428,17 @@ export const useTimetableStore = create<TimetableState>((set, get) => ({
         const { error: upsertError } = await supabase.from('blocks').upsert(newBlocks.map(mapBlockToDB));
         if (upsertError) throw upsertError;
       }
+
+      // インポート完了後、現在表示中の日付のデータをSupabaseから再取得して、メモリ上の blocks を最新にする
+      const curDateStr = format(get().currentDate, 'yyyy-MM-dd');
+      const { data: blocksData, error: fetchErr } = await supabase
+        .from('blocks')
+        .select('*')
+        .eq('date', curDateStr);
+      if (fetchErr) throw fetchErr;
+      
+      set({ blocks: (blocksData || []).map(mapBlockFromDB) });
+
     } catch (e: any) {
       console.error('Error during mergeBlocks write to Supabase:', e);
       set({ dbError: `保存エラー (マージ/インポート): ${e.message || e}` });
@@ -790,23 +827,40 @@ export const useTimetableStore = create<TimetableState>((set, get) => ({
   },
 
   copyDayTimetable: async (sourceDate, targetDate, targetGrades) => {
-    let deletedIds: string[] = [];
-    let createdBlocks: TimetableBlock[] = [];
+    set({ dbError: null });
+    if (!get().user) {
+      set({ dbError: 'ログインしていないため、日課コピーをデータベースに保存できませんでした。' });
+      return;
+    }
 
-    set((state) => {
-      const filteredBlocks = state.blocks.filter(b => {
-        const cls = state.classes.find(c => c.id === b.classId);
-        if (!cls || !targetGrades.includes(cls.grade)) return true;
-        const matches = b.date === targetDate;
-        if (matches) deletedIds.push(b.id);
-        return !matches;
+    try {
+      // 1. コピー元のデータを Supabase から直接フェッチ
+      const { data: sourceData, error: srcError } = await supabase
+        .from('blocks')
+        .select('*')
+        .eq('date', sourceDate);
+      if (srcError) throw srcError;
+
+      const sourceBlocks = (sourceData || []).map(mapBlockFromDB).filter(b => {
+        const cls = get().classes.find(c => c.id === b.classId);
+        return cls && targetGrades.includes(cls.grade);
       });
 
-      const sourceBlocks = state.blocks.filter(b => {
-        const cls = state.classes.find(c => c.id === b.classId);
-        return b.date === sourceDate && cls && targetGrades.includes(cls.grade);
-      });
+      // 2. コピー先の既存データ（削除対象）を特定
+      const { data: targetData, error: tgtError } = await supabase
+        .from('blocks')
+        .select('id, class_id')
+        .eq('date', targetDate);
+      if (tgtError) throw tgtError;
 
+      const deletedIds = (targetData || [])
+        .filter(b => {
+          const cls = get().classes.find(c => c.id === b.class_id);
+          return cls && targetGrades.includes(cls.grade);
+        })
+        .map(b => b.id);
+
+      // コピー元から新しいブロックを生成
       const newBlocks = sourceBlocks.map(b => ({
         ...b,
         id: `copy-${targetDate}-${b.classId}-${b.period}-${crypto.randomUUID ? crypto.randomUUID().substring(0, 8) : Math.random().toString(36).substring(2, 10)}`,
@@ -814,27 +868,27 @@ export const useTimetableStore = create<TimetableState>((set, get) => ({
         isBase: false
       }));
 
-      createdBlocks = newBlocks;
-      return { 
-        pastBlocks: [...state.pastBlocks.slice(-19), state.blocks],
-        blocks: [...filteredBlocks, ...newBlocks],
-        dbError: null
-      };
-    });
-
-    if (!get().user) {
-      set({ dbError: 'ログインしていないため、日課コピーをデータベースに保存できませんでした。' });
-      return;
-    }
-    try {
+      // 3. データベースへの反映
       if (deletedIds.length > 0) {
         const { error: delError } = await supabase.from('blocks').delete().in('id', deletedIds);
         if (delError) throw delError;
       }
-      if (createdBlocks.length > 0) {
-        const { error: insError } = await supabase.from('blocks').insert(createdBlocks.map(mapBlockToDB));
+      if (newBlocks.length > 0) {
+        const { error: insError } = await supabase.from('blocks').insert(newBlocks.map(mapBlockToDB));
         if (insError) throw insError;
       }
+
+      // 4. メモリ上の blocks の更新（現在表示中の日付と同じなら反映）
+      const curDateStr = format(get().currentDate, 'yyyy-MM-dd');
+      if (curDateStr === targetDate || curDateStr === sourceDate) {
+        const { data: currentBlocks, error: curError } = await supabase
+          .from('blocks')
+          .select('*')
+          .eq('date', curDateStr);
+        if (curError) throw curError;
+        set({ blocks: (currentBlocks || []).map(mapBlockFromDB) });
+      }
+
     } catch (e: any) {
       console.error('Error during copyDayTimetable write to Supabase:', e);
       set({ dbError: `保存エラー (日課コピー): ${e.message || e}` });
