@@ -406,6 +406,7 @@ export const useTimetableStore = create<TimetableState>((set, get) => ({
       return;
     }
     try {
+      // 1. 古いデータの削除（分割処理でタイムアウト防止）
       if (newBlocks.length <= 5) {
         const deletePromises = newBlocks.map(nb => 
           supabase.from('blocks').delete().match({ date: nb.date, class_id: nb.classId, period: nb.period })
@@ -417,19 +418,31 @@ export const useTimetableStore = create<TimetableState>((set, get) => ({
       } else {
         const uniqueDates = Array.from(new Set(newBlocks.map(nb => nb.date)));
         const uniqueClassIds = Array.from(new Set(newBlocks.map(nb => nb.classId)));
-        const { error: delError } = await supabase.from('blocks')
-          .delete()
-          .in('date', uniqueDates)
-          .in('class_id', uniqueClassIds);
-        if (delError) throw delError;
+        
+        // 削除対象の日付が多すぎる場合、負荷を抑えるために日付を分割して削除を実行する
+        const dateChunkSize = 20; // 20日ずつ削除
+        for (let i = 0; i < uniqueDates.length; i += dateChunkSize) {
+          const dateChunk = uniqueDates.slice(i, i + dateChunkSize);
+          const { error: delError } = await supabase.from('blocks')
+            .delete()
+            .in('date', dateChunk)
+            .in('class_id', uniqueClassIds);
+          if (delError) throw delError;
+        }
       }
 
+      // 2. 新しいデータの分割 upsert (1000件ずつ、ペイロード制限・タイムアウト防止)
       if (newBlocks.length > 0) {
-        const { error: upsertError } = await supabase.from('blocks').upsert(newBlocks.map(mapBlockToDB));
-        if (upsertError) throw upsertError;
+        const chunkSize = 1000;
+        const dbBlocks = newBlocks.map(mapBlockToDB);
+        for (let i = 0; i < dbBlocks.length; i += chunkSize) {
+          const chunk = dbBlocks.slice(i, i + chunkSize);
+          const { error: upsertError } = await supabase.from('blocks').upsert(chunk);
+          if (upsertError) throw upsertError;
+        }
       }
 
-      // インポート完了後、現在表示中の日付のデータをSupabaseから再取得して、メモリ上の blocks を最新にする
+      // 3. インポート完了後、現在表示中の日付のデータをSupabaseから再取得して、メモリ上の blocks を最新にする
       const curDateStr = format(get().currentDate, 'yyyy-MM-dd');
       const { data: blocksData, error: fetchErr } = await supabase
         .from('blocks')
