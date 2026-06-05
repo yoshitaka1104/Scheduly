@@ -162,9 +162,11 @@ export function DraggableBlock({ block, onClick, duplicateTeachers = [], duplica
                     }).filter(Boolean);
                   }
 
-                  let verticalFontSize = 'clamp(14px, 21cqh, 20px)';
-                  if (mainText.length >= 4) {
-                    verticalFontSize = (badges.length > 0 || locations.length > 0) ? 'clamp(11px, 15cqh, 14px)' : 'clamp(12px, 17cqh, 16px)';
+                  let verticalFontSize = '11px';
+                  if (mainText.length <= 2) {
+                    verticalFontSize = '15px';
+                  } else if (mainText.length === 3) {
+                    verticalFontSize = '13px';
                   }
 
                   let displayNode: React.ReactNode = mainText;
@@ -248,9 +250,11 @@ export function DraggableBlock({ block, onClick, duplicateTeachers = [], duplica
                   }).filter(Boolean);
                 }
 
-                let verticalFontSize = 'clamp(14px, 21cqh, 20px)';
-                if (mainText.length >= 4) {
-                  verticalFontSize = (badges.length > 0 || locations.length > 0) ? 'clamp(11px, 15cqh, 14px)' : 'clamp(12px, 17cqh, 16px)';
+                let verticalFontSize = '11px';
+                if (mainText.length <= 2) {
+                  verticalFontSize = '15px';
+                } else if (mainText.length === 3) {
+                  verticalFontSize = '13px';
                 }
 
                 let displayNode: React.ReactNode = mainText;
