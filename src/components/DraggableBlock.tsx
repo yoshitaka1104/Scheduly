@@ -168,7 +168,7 @@ export function DraggableBlock({ block, onClick, duplicateTeachers = [], duplica
                     const { last, first } = getTeacherDisplayParts(mainText);
                     displayNode = first ? (
                       <>
-                        {last}<span style={{ fontSize: '0.7em', marginInlineStart: '-0.15em' }}>{first}</span>
+                        {last}<span style={{ fontSize: '10px', marginInlineStart: '-0.15em' }}>{first}</span>
                       </>
                     ) : (
                       last
@@ -177,10 +177,8 @@ export function DraggableBlock({ block, onClick, duplicateTeachers = [], duplica
                   }
 
                   let verticalFontSize = '11px';
-                  if (displayText.length <= 2) {
+                  if (displayText.length <= 3) {
                     verticalFontSize = '15px';
-                  } else if (displayText.length === 3) {
-                    verticalFontSize = '13px';
                   }
 
                   return (
@@ -258,7 +256,7 @@ export function DraggableBlock({ block, onClick, duplicateTeachers = [], duplica
                   const { last, first } = getTeacherDisplayParts(mainText);
                   displayNode = first ? (
                     <>
-                      {last}<span style={{ fontSize: '0.7em', marginInlineStart: '-0.15em' }}>{first}</span>
+                      {last}<span style={{ fontSize: '10px', marginInlineStart: '-0.15em' }}>{first}</span>
                     </>
                   ) : (
                     last
@@ -267,10 +265,8 @@ export function DraggableBlock({ block, onClick, duplicateTeachers = [], duplica
                 }
 
                 let verticalFontSize = '11px';
-                if (displayText.length <= 2) {
+                if (displayText.length <= 3) {
                   verticalFontSize = '15px';
-                } else if (displayText.length === 3) {
-                  verticalFontSize = '13px';
                 }
 
                 return (
