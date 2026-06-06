@@ -250,7 +250,7 @@ function App() {
             <div 
               id="timetable-export-container" 
               className={`bg-white rounded-2xl shadow-sm border border-slate-200 flex flex-col ${
-                isExporting ? 'p-6 h-max overflow-visible' : 'p-4 flex-1 overflow-hidden'
+                isExporting ? 'p-6 h-max w-[1200px] overflow-visible' : 'p-4 flex-1 overflow-hidden'
               }`}
             >
               {isExporting && (
