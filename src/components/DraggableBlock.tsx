@@ -162,14 +162,8 @@ export function DraggableBlock({ block, onClick, duplicateTeachers = [], duplica
                     }).filter(Boolean);
                   }
 
-                  let verticalFontSize = '11px';
-                  if (mainText.length <= 2) {
-                    verticalFontSize = '15px';
-                  } else if (mainText.length === 3) {
-                    verticalFontSize = '13px';
-                  }
-
                   let displayNode: React.ReactNode = mainText;
+                  let displayText = mainText;
                   if (displayMode === 'teacher' && !block.isBatch) {
                     const { last, first } = getTeacherDisplayParts(mainText);
                     displayNode = first ? (
@@ -179,6 +173,14 @@ export function DraggableBlock({ block, onClick, duplicateTeachers = [], duplica
                     ) : (
                       last
                     );
+                    displayText = last + first;
+                  }
+
+                  let verticalFontSize = '11px';
+                  if (displayText.length <= 2) {
+                    verticalFontSize = '15px';
+                  } else if (displayText.length === 3) {
+                    verticalFontSize = '13px';
                   }
 
                   return (
@@ -250,14 +252,8 @@ export function DraggableBlock({ block, onClick, duplicateTeachers = [], duplica
                   }).filter(Boolean);
                 }
 
-                let verticalFontSize = '11px';
-                if (mainText.length <= 2) {
-                  verticalFontSize = '15px';
-                } else if (mainText.length === 3) {
-                  verticalFontSize = '13px';
-                }
-
                 let displayNode: React.ReactNode = mainText;
+                let displayText = mainText;
                 if (displayMode === 'teacher' && !block.isBatch) {
                   const { last, first } = getTeacherDisplayParts(mainText);
                   displayNode = first ? (
@@ -267,6 +263,14 @@ export function DraggableBlock({ block, onClick, duplicateTeachers = [], duplica
                   ) : (
                     last
                   );
+                  displayText = last + first;
+                }
+
+                let verticalFontSize = '11px';
+                if (displayText.length <= 2) {
+                  verticalFontSize = '15px';
+                } else if (displayText.length === 3) {
+                  verticalFontSize = '13px';
                 }
 
                 return (
