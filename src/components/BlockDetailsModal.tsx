@@ -93,11 +93,6 @@ export function BlockDetailsModal({ activeItem, onClose }: Props) {
   const handleSave = () => {
     const isChanged = JSON.stringify(block.subClasses) !== JSON.stringify(editedSubClasses);
     if (isChanged) {
-      const isBaseModified = editedSubClasses.some((s, i) => 
-        s.subject !== block.subClasses![i]?.subject || 
-        s.teacher !== block.subClasses![i]?.teacher
-      );
-      
       const isMemoModified = editedSubClasses.some((s, i) => 
         s.location !== block.subClasses![i]?.location ||
         s.hasTask !== block.subClasses![i]?.hasTask ||
@@ -117,7 +112,7 @@ export function BlockDetailsModal({ activeItem, onClose }: Props) {
 
       updateBlocks(targetIds, { 
         subClasses: editedSubClasses, 
-        isBase: isBaseModified ? false : block.isBase,
+        isBase: block.isBase,
         isMemoModified: block.isMemoModified || isMemoModified
       });
       
