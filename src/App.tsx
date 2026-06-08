@@ -61,6 +61,13 @@ function App() {
       const url = await toPng(boardElement, {
         backgroundColor: '#ffffff',
         pixelRatio: 2,
+        width: 1200,
+        style: {
+          width: '1200px',
+          height: 'auto',
+          margin: '0',
+          transform: 'none',
+        }
       });
       const link = document.createElement('a');
       const suffix = changeOnly ? '_変更のみ' : '';
@@ -250,8 +257,9 @@ function App() {
             <div 
               id="timetable-export-container" 
               className={`bg-white rounded-2xl shadow-sm border border-slate-200 flex flex-col ${
-                isExporting ? 'p-6 h-max w-[1200px] overflow-visible' : 'p-4 flex-1 overflow-hidden'
+                isExporting ? 'p-6 h-max overflow-visible' : 'p-4 flex-1 overflow-hidden'
               }`}
+              style={isExporting ? { width: '1200px' } : undefined}
             >
               {isExporting && (
                 <div className="flex items-center justify-between mb-6 px-2">
