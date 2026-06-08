@@ -221,7 +221,7 @@ export function DraggableBlock({ block, onClick, duplicateTeachers = [], duplica
                       {locations.length > 0 && (
                         <div className={`flex flex-wrap gap-1 mt-1.5 justify-center ${block.isBatch ? 'w-full' : ''}`}>
                           {locations.map((loc, idx) => (
-                            <span key={idx} className="text-[10px] font-black text-sky-800 bg-sky-100 border border-sky-300 px-1 py-0.5 rounded-sm shadow-sm truncate max-w-full tracking-wide">
+                            <span key={idx} className="text-[10px] font-black text-sky-800 bg-sky-100 border border-sky-300 px-1 py-0.5 rounded-sm shadow-sm whitespace-nowrap tracking-wide">
                               {loc}
                             </span>
                           ))}
@@ -309,7 +309,7 @@ export function DraggableBlock({ block, onClick, duplicateTeachers = [], duplica
                     {locations.length > 0 && (
                       <div className={`flex flex-wrap gap-1 mt-1.5 justify-center ${block.isBatch ? 'w-full' : ''}`}>
                         {locations.map((loc, idx) => (
-                          <span key={idx} className="text-[10px] font-black text-sky-800 bg-sky-100 border border-sky-300 px-1 py-0.5 rounded-sm shadow-sm truncate max-w-full tracking-wide">
+                          <span key={idx} className="text-[10px] font-black text-sky-800 bg-sky-100 border border-sky-300 px-1 py-0.5 rounded-sm shadow-sm whitespace-nowrap tracking-wide">
                             {loc}
                           </span>
                         ))}

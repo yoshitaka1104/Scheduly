@@ -48,7 +48,7 @@ function App() {
     setIsExporting(true);
     
     // Reactの再レンダリングとDOMの更新を待つ
-    await new Promise(resolve => setTimeout(resolve, 300));
+    await new Promise(resolve => setTimeout(resolve, 500));
 
     const boardElement = document.getElementById('timetable-export-container');
     if (!boardElement) {
