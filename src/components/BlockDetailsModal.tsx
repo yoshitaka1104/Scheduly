@@ -93,6 +93,21 @@ export function BlockDetailsModal({ activeItem, onClose }: Props) {
   const handleSave = () => {
     const isChanged = JSON.stringify(block.subClasses) !== JSON.stringify(editedSubClasses);
     if (isChanged) {
+      // 授業変更の判定（科目名や教員名の通常変更）
+      const isBaseModifiedNormal = editedSubClasses.some((s, i) => 
+        s.subject !== block.subClasses![i]?.subject || 
+        s.teacher !== block.subClasses![i]?.teacher
+      );
+
+      // 例外ルール：展開数の減少（単なる一部削除）であるかの判定
+      const allExistInOriginal = editedSubClasses.every(s => 
+        block.subClasses?.some(orig => orig.subject === s.subject && orig.teacher === s.teacher)
+      );
+      const countDecreased = editedSubClasses.length < (block.subClasses?.length || 0);
+      const isJustRemoval = allExistInOriginal && countDecreased;
+
+      const isBaseModified = isBaseModifiedNormal && !isJustRemoval;
+
       const isMemoModified = editedSubClasses.some((s, i) => 
         s.location !== block.subClasses![i]?.location ||
         s.hasTask !== block.subClasses![i]?.hasTask ||
@@ -112,7 +127,7 @@ export function BlockDetailsModal({ activeItem, onClose }: Props) {
 
       updateBlocks(targetIds, { 
         subClasses: editedSubClasses, 
-        isBase: block.isBase,
+        isBase: isBaseModified ? false : block.isBase,
         isMemoModified: block.isMemoModified || isMemoModified
       });
       
