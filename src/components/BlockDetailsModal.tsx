@@ -21,10 +21,11 @@ export function BlockDetailsModal({ activeItem, onClose }: Props) {
     }
   }, [activeItem]);
 
-  const { classTeachers, otherTeachers, teacherToSubjectsMap } = React.useMemo(() => {
+  const { classTeachers, otherTeachers, teacherToSubjectsMap, teacherToClassSubjectsMap } = React.useMemo(() => {
     const allT = new Set<string>();
     const classT = new Set<string>();
     const subjMap = new Map<string, Set<string>>();
+    const classSubjMap = new Map<string, Set<string>>();
     
     if (block) {
       blocks.forEach(b => {
@@ -32,6 +33,8 @@ export function BlockDetailsModal({ activeItem, onClose }: Props) {
           allT.add(s.teacher);
           if (b.classId === block.classId) {
             classT.add(s.teacher);
+            if (!classSubjMap.has(s.teacher)) classSubjMap.set(s.teacher, new Set());
+            classSubjMap.get(s.teacher)!.add(s.subject);
           }
           if (!subjMap.has(s.teacher)) subjMap.set(s.teacher, new Set());
           subjMap.get(s.teacher)!.add(s.subject);
@@ -44,10 +47,16 @@ export function BlockDetailsModal({ activeItem, onClose }: Props) {
       tMap[teacher] = Array.from(subjects).sort();
     });
 
+    const classTMap: Record<string, string[]> = {};
+    classSubjMap.forEach((subjects, teacher) => {
+      classTMap[teacher] = Array.from(subjects).sort();
+    });
+
     return {
       classTeachers: Array.from(classT).sort(),
       otherTeachers: Array.from(allT).filter(t => !classT.has(t)).sort(),
-      teacherToSubjectsMap: tMap
+      teacherToSubjectsMap: tMap,
+      teacherToClassSubjectsMap: classTMap
     };
   }, [blocks, block]);
 
@@ -61,7 +70,10 @@ export function BlockDetailsModal({ activeItem, onClose }: Props) {
         const updated = { ...s, [field]: value };
         // If teacher changes, auto-update subject if current subject is not valid for new teacher
         if (field === 'teacher') {
-          const available = teacherToSubjectsMap[value as string] || [];
+          const classSubjects = teacherToClassSubjectsMap[value as string] || [];
+          const available = classSubjects.length > 0 
+            ? classSubjects 
+            : (teacherToSubjectsMap[value as string] || []);
           if (available.length > 0 && !available.includes(updated.subject)) {
             updated.subject = available[0];
           }
@@ -226,7 +238,10 @@ export function BlockDetailsModal({ activeItem, onClose }: Props) {
         
         <div className="p-6 overflow-y-auto space-y-8 flex-1">
           {editedSubClasses.map((sub) => {
-            const availableSubjects = teacherToSubjectsMap[sub.teacher] || [];
+            const classSubjects = teacherToClassSubjectsMap[sub.teacher] || [];
+            const availableSubjects = classSubjects.length > 0 
+              ? classSubjects 
+              : (teacherToSubjectsMap[sub.teacher] || []);
 
             return (
               <div key={sub.id} className="space-y-6 pb-8 border-b-[3px] border-slate-400/50 last:border-0 last:pb-0 mt-6 relative">
