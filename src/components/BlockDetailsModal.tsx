@@ -93,20 +93,49 @@ export function BlockDetailsModal({ activeItem, onClose }: Props) {
   const handleSave = () => {
     const isChanged = JSON.stringify(block.subClasses) !== JSON.stringify(editedSubClasses);
     if (isChanged) {
-      // 授業変更の判定（科目名や教員名の通常変更）
-      const isBaseModifiedNormal = editedSubClasses.some((s, i) => 
-        s.subject !== block.subClasses![i]?.subject || 
-        s.teacher !== block.subClasses![i]?.teacher
+      // 1. originalSubClasses（基本時間割のオリジナル授業内容）を決定・取得
+      let originalSubClasses = block.originalSubClasses;
+      if (block.isBase && !originalSubClasses) {
+        // まだ一度も変更されていない基本ブロックの場合、現在のsubClassesをオリジナルとして保存
+        originalSubClasses = block.subClasses.map(s => ({
+          subject: s.subject,
+          teacher: s.teacher
+        }));
+      }
+
+      // 2. 手動で元のオリジナル授業内容に戻されたかの判定
+      const isBackToOriginal = !!(
+        originalSubClasses && 
+        originalSubClasses.length === editedSubClasses.length && 
+        editedSubClasses.every((s, i) => 
+          s.subject === originalSubClasses![i].subject && 
+          s.teacher === originalSubClasses![i].teacher
+        )
       );
 
-      // 例外ルール：展開数の減少（単なる一部削除）であるかの判定
-      const allExistInOriginal = editedSubClasses.every(s => 
-        block.subClasses?.some(orig => orig.subject === s.subject && orig.teacher === s.teacher)
-      );
-      const countDecreased = editedSubClasses.length < (block.subClasses?.length || 0);
-      const isJustRemoval = allExistInOriginal && countDecreased;
+      let nextIsBase = block.isBase;
+      if (isBackToOriginal) {
+        // 元の授業内容に戻った場合、基本状態（isBase = true）に戻す
+        nextIsBase = true;
+      } else {
+        // 授業変更の判定（科目名や教員名の通常変更）
+        const isBaseModifiedNormal = editedSubClasses.some((s, i) => 
+          s.subject !== block.subClasses![i]?.subject || 
+          s.teacher !== block.subClasses![i]?.teacher
+        );
 
-      const isBaseModified = isBaseModifiedNormal && !isJustRemoval;
+        // 例外ルール：展開数の減少（単なる一部削除）であるかの判定
+        const allExistInOriginal = editedSubClasses.every(s => 
+          block.subClasses?.some(orig => orig.subject === s.subject && orig.teacher === s.teacher)
+        );
+        const countDecreased = editedSubClasses.length < (block.subClasses?.length || 0);
+        const isJustRemoval = allExistInOriginal && countDecreased;
+
+        const isBaseModified = isBaseModifiedNormal && !isJustRemoval;
+        if (isBaseModified) {
+          nextIsBase = false;
+        }
+      }
 
       const isMemoModified = editedSubClasses.some((s, i) => 
         s.location !== block.subClasses![i]?.location ||
@@ -127,7 +156,8 @@ export function BlockDetailsModal({ activeItem, onClose }: Props) {
 
       updateBlocks(targetIds, { 
         subClasses: editedSubClasses, 
-        isBase: isBaseModified ? false : block.isBase,
+        isBase: nextIsBase,
+        originalSubClasses,
         isMemoModified: block.isMemoModified || isMemoModified
       });
       

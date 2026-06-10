@@ -25,6 +25,10 @@ export interface TimetableBlock {
   isBatch?: boolean; // 一括処理で作成されたものかどうか（マージ判定用）
   isMemoModified?: boolean; // 課題や場所が変更されたかどうか
   subClasses: SubClass[];
+  originalSubClasses?: {
+    subject: string;
+    teacher: string;
+  }[];
 }
 
 export interface Settings {

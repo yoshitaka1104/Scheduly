@@ -116,6 +116,10 @@ export function AdminDashboard() {
                   subject: g.subject,
                   teacher: g.teacher,
                   isElective: g.isElective
+                })),
+                originalSubClasses: group.map((g: any) => ({
+                  subject: g.subject,
+                  teacher: g.teacher
                 }))
               });
             });
